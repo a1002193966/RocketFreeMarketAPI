@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\shiin\\Desktop\\RocketFreeMarketAPI\\RocketFreeMarketAPI.csproj": {}
+    "C:\\Users\\shiin\\Desktop\\RocketFreeMarketAPI\\RocketFreeMarketAPI\\RocketFreeMarketAPI.csproj": {}
   },
   "projects": {
-    "C:\\Users\\shiin\\Desktop\\RocketFreeMarketAPI\\RocketFreeMarketAPI.csproj": {
+    "C:\\Users\\shiin\\Desktop\\RocketFreeMarketAPI\\RocketFreeMarketAPI\\RocketFreeMarketAPI.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\shiin\\Desktop\\RocketFreeMarketAPI\\RocketFreeMarketAPI.csproj",
+        "projectUniqueName": "C:\\Users\\shiin\\Desktop\\RocketFreeMarketAPI\\RocketFreeMarketAPI\\RocketFreeMarketAPI.csproj",
         "projectName": "RocketFreeMarketAPI",
-        "projectPath": "C:\\Users\\shiin\\Desktop\\RocketFreeMarketAPI\\RocketFreeMarketAPI.csproj",
+        "projectPath": "C:\\Users\\shiin\\Desktop\\RocketFreeMarketAPI\\RocketFreeMarketAPI\\RocketFreeMarketAPI.csproj",
         "packagesPath": "C:\\Users\\shiin\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\shiin\\Desktop\\RocketFreeMarketAPI\\obj\\",
+        "outputPath": "C:\\Users\\shiin\\Desktop\\RocketFreeMarketAPI\\RocketFreeMarketAPI\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\shiin\\AppData\\Roaming\\NuGet\\NuGet.Config",

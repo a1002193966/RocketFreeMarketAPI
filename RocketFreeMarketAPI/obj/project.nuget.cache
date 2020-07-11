@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "P3kpmSNLrFCSycsdNks2Blz6r3MBn8gQteYKAB6dn2CG1hMSv23r3Yroeh+uD/FatLTF17HoygxIszKA/CurIg==",
+  "dgSpecHash": "IsiUVMSSIb6JcZcsKlkSbRocjrF0SCfwjZbGQwfqF3S0sP0r6W33BKGiZkm6hxTQwy2SNNQwoID0BtZQ33/EDw==",
   "success": true,
-  "projectFilePath": "C:\\Users\\shiin\\Desktop\\RocketFreeMarketAPI\\RocketFreeMarketAPI.csproj",
+  "projectFilePath": "C:\\Users\\shiin\\Desktop\\RocketFreeMarketAPI\\RocketFreeMarketAPI\\RocketFreeMarketAPI.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\shiin\\.nuget\\packages\\microsoft.netcore.platforms\\3.1.0\\microsoft.netcore.platforms.3.1.0.nupkg.sha512",
     "C:\\Users\\shiin\\.nuget\\packages\\microsoft.win32.registry\\4.7.0\\microsoft.win32.registry.4.7.0.nupkg.sha512",
