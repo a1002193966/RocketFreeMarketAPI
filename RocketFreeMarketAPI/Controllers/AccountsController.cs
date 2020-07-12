@@ -37,8 +37,9 @@ namespace RocketFreeMarketAPI.Controllers
 
         // POST api/<AccountsController>
         [HttpPost]
-        public void Post([FromBody] string value)
+        public bool Post([FromBody] Account acc)
         {
+            return _conn.Register(acc.Email, acc.PasswordHash, acc.PhoneNumber);
         }
 
         // PUT api/<AccountsController>/5
