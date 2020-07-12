@@ -40,7 +40,7 @@ namespace RocketFreeMarketAPI.DatabaseConnection
                             sqlconn.Open();
                             sqlcmd.Parameters.AddWithValue("@PhoneNumber", phoneNumber);
                             sqlcmd.Parameters.AddWithValue("@Email", email);
-                            sqlcmd.Parameters.AddWithValue("@PasswordHash", secret.PasswordHash);
+                            sqlcmd.Parameters.AddWithValue("@PasswordHash", secret.Cipher);
                             sqlcmd.Parameters.AddWithValue("@AESKey", secret.Key);
                             sqlcmd.Parameters.AddWithValue("@AESIV", secret.IV);
 
@@ -49,7 +49,7 @@ namespace RocketFreeMarketAPI.DatabaseConnection
                         }
                         catch(Exception e)
                         {
-
+                            throw;
                         }
                         finally
                         {
@@ -79,7 +79,8 @@ namespace RocketFreeMarketAPI.DatabaseConnection
                         }
                     }
                     catch(Exception e)
-                    {            
+                    {
+                        throw;
                     }
                     finally
                     {
@@ -87,7 +88,7 @@ namespace RocketFreeMarketAPI.DatabaseConnection
                     }
                 }
             }
-            return false;
+            //return false;
         }
 
 
@@ -114,7 +115,7 @@ namespace RocketFreeMarketAPI.DatabaseConnection
                             while (reader.Read())
                             {
                                 Secret secret = new Secret();
-                                secret.PasswordHash = (byte[])reader["PasswordHash"];
+                                secret.Cipher = (byte[])reader["PasswordHash"];
                                 secret.Key = (byte[])reader["AESKey"];
                                 secret.IV = (byte[])reader["AESIV"];
 
@@ -135,7 +136,7 @@ namespace RocketFreeMarketAPI.DatabaseConnection
                     }
                     catch(Exception e)
                     {
-                        
+                        throw;
                     }
                     finally
                     {
@@ -143,7 +144,7 @@ namespace RocketFreeMarketAPI.DatabaseConnection
                     }
                 }
             }
-            return acc;
+            //return acc;
         }
 
 

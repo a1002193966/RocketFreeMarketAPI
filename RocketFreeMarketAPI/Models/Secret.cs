@@ -7,7 +7,7 @@ namespace RocketFreeMarketAPI.Models
 {
     public class Secret
     {
-        public byte[] PasswordHash { get; set; }
+        public byte[] Cipher { get; set; }
         public byte[] Key { get; set; }
         public byte[] IV { get; set; }
     }

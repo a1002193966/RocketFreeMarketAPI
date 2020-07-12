@@ -27,7 +27,7 @@ namespace RocketFreeMarketAPI.Crypto
                         {
                             sw.Write(password);
                         }
-                        secret.PasswordHash = ms.ToArray();
+                        secret.Cipher = ms.ToArray();
                     }
                 }
             }
@@ -43,7 +43,7 @@ namespace RocketFreeMarketAPI.Crypto
                 aes.Key = secret.Key;
                 aes.IV = secret.IV;
                 ICryptoTransform decryptor = aes.CreateDecryptor(aes.Key, aes.IV);
-                using (MemoryStream ms = new MemoryStream(secret.PasswordHash))
+                using (MemoryStream ms = new MemoryStream(secret.Cipher))
                 {
                     using (CryptoStream cs = new CryptoStream(ms, decryptor, CryptoStreamMode.Read))
                     {
