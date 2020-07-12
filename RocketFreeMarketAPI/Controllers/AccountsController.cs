@@ -29,8 +29,8 @@ namespace RocketFreeMarketAPI.Controllers
         }
 
         // GET api/<AccountsController>/5
-        [HttpGet("{id}")]
-        public string Get(int id)
+        [HttpGet("{email}")]
+        public string Get(string email)
         {
             return "value";
         }

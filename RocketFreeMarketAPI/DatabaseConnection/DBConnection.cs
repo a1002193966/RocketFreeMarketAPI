@@ -51,6 +51,7 @@ namespace RocketFreeMarketAPI.DatabaseConnection
                     }
                     catch(Exception e)
                     { 
+                        
                     }
                     finally
                     {
