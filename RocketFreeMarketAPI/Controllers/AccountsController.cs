@@ -19,37 +19,35 @@ namespace RocketFreeMarketAPI.Controllers
         }
 
 
-
-        // GET: api/<AccountsController>
+        // GET: <AccountsController>
         [HttpGet]
         public async Task<List<Account>> Get()
         {
-            List<Account> AccountList = new List<Account>();
-            //List<Account> AccountList = await _conn.ExcuteCommand("SELECT * FROM Account");
-            return AccountList;   
+            return await _conn.GetAllAccountInfo();
         }
 
-        // GET api/<AccountsController>/5
+        // GET <AccountsController>/test@test.com
         [HttpGet("{email}")]
         public Account Get([FromRoute] string email)
         {
             return _conn.GetAccountInfo(email);
         }
 
-        // POST api/<AccountsController>
+
+        // POST <AccountsController>
         [HttpPost]
-        public bool Post([FromBody] Account acc)
+        public bool Post([FromBody] Account account)
         {
-            return _conn.Register(acc.Email, acc.PasswordHash, acc.PhoneNumber);
+            return _conn.Register(account.Email, account.PasswordHash, account.PhoneNumber);
         }
 
-        // PUT api/<AccountsController>/5
+        // PUT <AccountsController>/5
         [HttpPut("{id}")]
         public void Put(int id, [FromBody] string value)
         {
         }
 
-        // DELETE api/<AccountsController>/5
+        // DELETE <AccountsController>/5
         [HttpDelete("{id}")]
         public void Delete(int id)
         {

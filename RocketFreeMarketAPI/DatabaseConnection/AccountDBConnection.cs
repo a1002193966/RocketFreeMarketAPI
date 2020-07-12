@@ -88,7 +88,6 @@ namespace RocketFreeMarketAPI.DatabaseConnection
                     }
                 }
             }
-            //return false;
         }
 
 
@@ -144,76 +143,60 @@ namespace RocketFreeMarketAPI.DatabaseConnection
                     }
                 }
             }
-            //return acc;
         }
 
 
 
+        public async Task<List<Account>> GetAllAccountInfo()
+        {
+            List<Account> AccountList = new List<Account>();
+            using (SqlConnection sqlconn = new SqlConnection(_connectionString))
+            {
+                string cmd = "SELECT * FROM Account";
+                using SqlCommand sqlcmd = new SqlCommand(cmd, sqlconn);
+                try
+                {
+                    sqlconn.Open();
+                    using (SqlDataReader reader = await sqlcmd.ExecuteReaderAsync())
+                    {
+                        while (await reader.ReadAsync())
+                        {
+                            Secret secret = new Secret
+                            {
+                                Cipher = (byte[])reader["PasswordHash"],
+                                Key = (byte[])reader["AESKey"],
+                                IV = (byte[])reader["AESIV"]
+                            };
 
-
-
-
-
-
-
-
-
-
-
-
-
-        //public async Task<List<Account>> ExcuteCommand(string cmd)
-        //{
-        //    List<Account> AccountList = new List<Account>();
-        //    using (SqlConnection sqlconn = new SqlConnection(_connectionString))
-        //    {
-        //        using (SqlCommand sqlcmd = new SqlCommand(cmd, sqlconn))
-        //        {
-        //            try
-        //            {
-        //                sqlconn.Open();
-        //                using (SqlDataReader reader = await sqlcmd.ExecuteReaderAsync())
-        //                {                        
-        //                    while(await reader.ReadAsync())
-        //                    {
-        //                        Account Acc = new Account
-        //                        {
-        //                            AccountID = Convert.ToInt32(reader["AccountID"]),
-        //                            PhoneNumber = Convert.ToInt32(reader["PhoneNumber"]),
-        //                            Email = reader["Email"].ToString(),
-        //                            PasswordHash = reader["PasswordHash"].ToString(),
-        //                            PasswordSalt = reader["PasswordSalt"].ToString(),
-        //                            CreationDate = Convert.ToDateTime(reader["CreationDate"]),
-        //                            UpdateDate = Convert.ToDateTime(reader["UpdateDate"]),
-        //                            LastLoginDate = Convert.ToDateTime(reader["LastLoginDate"]),
-        //                            Status = Convert.ToInt32(reader["Status"]),
-        //                            AccountType = reader["AccountType"].ToString()
-        //                        };
-        //                        AccountList.Add(Acc);
-        //                    }
-        //                }
-        //            }
-        //            catch(Exception e)
-        //            { 
-        //            }
-        //            finally
-        //            {
-        //                sqlconn.Close();
-        //            }
-        //        }
-        //    }
-        //    return AccountList;
-        //}
-
-
-
-
-
-
-
-
-
-
+                            Account account = new Account
+                            {
+                                AccountID = (int)reader["AccountID"],
+                                PhoneNumber = (string)reader["PhoneNumber"],
+                                Email = (string)reader["Email"],
+                                PasswordHash = CryptoProcess.Decrypt_Aes(secret),
+                                AESKey = (byte[])reader["AESKey"],
+                                AESIV = (byte[])reader["AESIV"],
+                                CreationDate = (DateTime)reader["CreationDate"],
+                                UpdateDate = (DateTime)reader["UpdateDate"],
+                                LastLoginDate = (DateTime)reader["LastLoginDate"],
+                                Status = (int)reader["Status"],
+                                AccountType = (string)reader["AccountType"]
+                            };
+                            AccountList.Add(account);
+                        }
+                    }
+                }
+                catch (Exception e)
+                {
+                    throw;
+                }
+                finally
+                {
+                    sqlconn.Close();
+                }
+            }
+            return AccountList;
+        }
 
 
 
@@ -238,8 +221,8 @@ namespace RocketFreeMarketAPI.DatabaseConnection
         //                sqlconn.Open();
         //                using (SqlDataReader reader = sqlcmd.ExecuteReader())
         //                {
-                           
-                            
+
+
         //                }
         //            }
         //            catch (Exception e)
@@ -252,6 +235,6 @@ namespace RocketFreeMarketAPI.DatabaseConnection
         //        }
         //    }
         //}
-      
+
     }
 }

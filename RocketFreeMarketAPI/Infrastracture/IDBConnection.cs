@@ -9,7 +9,8 @@ namespace RocketFreeMarketAPI.Infrastracture
     public interface IDBConnection
     {
         //Task<List<Account>> ExcuteCommand(string cmd);
-        bool Register(string email, string pwd, string phoneNumber);
+        bool Register(string email, string password, string phoneNumber);
         Account GetAccountInfo(string email);
+        Task<List<Account>> GetAllAccountInfo();
     }
 }
