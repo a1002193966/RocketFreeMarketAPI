@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Configuration;
+using RocketFreeMarketAPI.Crypto;
 using RocketFreeMarketAPI.Infrastracture;
 using RocketFreeMarketAPI.Models;
 using System;
@@ -23,14 +24,15 @@ namespace RocketFreeMarketAPI.DatabaseConnection
 
 
 
-        public bool Register(string email, string password, int phoneNumber)
+        public bool Register(string email, string password, string phoneNumber)
         {
             if (!isExist(email))
             {
+                Secret secret = CryptoProcess.Encrypt_Aes(password);
                 using(SqlConnection sqlconn = new SqlConnection(_connectionString))
                 {
                     string cmd = "INSERT INTO Account "+
-                                 "VALUES(@PhoneNumber, @Email, @PasswordHash, @PasswordSalt, GETDATE(), GETDATE(), GETDATE(), 0, 'Customer')";
+                                 "VALUES(@PhoneNumber, @Email, @PasswordHash, @AESKey, @AESIV, GETDATE(), GETDATE(), GETDATE(), 0, 'Customer')";
                     using (SqlCommand sqlcmd = new SqlCommand(cmd, sqlconn))
                     {
                         try
@@ -38,8 +40,9 @@ namespace RocketFreeMarketAPI.DatabaseConnection
                             sqlconn.Open();
                             sqlcmd.Parameters.AddWithValue("@PhoneNumber", phoneNumber);
                             sqlcmd.Parameters.AddWithValue("@Email", email);
-                            sqlcmd.Parameters.AddWithValue("@PasswordHash", Convert.ToInt32(password));
-                            sqlcmd.Parameters.AddWithValue("@PasswordSalt", 10101010);
+                            sqlcmd.Parameters.AddWithValue("@PasswordHash", secret.PasswordHash);
+                            sqlcmd.Parameters.AddWithValue("@AESKey", secret.Key);
+                            sqlcmd.Parameters.AddWithValue("@AESIV", secret.IV);
 
                             int result = sqlcmd.ExecuteNonQuery();
                             return result > 0;
@@ -89,54 +92,50 @@ namespace RocketFreeMarketAPI.DatabaseConnection
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        public async Task<List<Account>> ExcuteCommand(string cmd)
+        public Account GetAccountInfo(string email)
         {
-            List<Account> AccountList = new List<Account>();
+            Account acc = new Account();
+            if(!isExist(email))
+            {
+                return acc;
+            }
+
             using (SqlConnection sqlconn = new SqlConnection(_connectionString))
             {
+                string cmd = "SELECT * FROM Account WHERE Email = @Email";
                 using (SqlCommand sqlcmd = new SqlCommand(cmd, sqlconn))
                 {
                     try
                     {
                         sqlconn.Open();
-                        using (SqlDataReader reader = await sqlcmd.ExecuteReaderAsync())
-                        {                        
-                            while(await reader.ReadAsync())
+                        sqlcmd.Parameters.AddWithValue("@Email", email);
+                        using (SqlDataReader reader = sqlcmd.ExecuteReader())
+                        {
+                            while (reader.Read())
                             {
-                                Account Acc = new Account
-                                {
-                                    AccountID = Convert.ToInt32(reader["AccountID"]),
-                                    PhoneNumber = Convert.ToInt32(reader["PhoneNumber"]),
-                                    Email = reader["Email"].ToString(),
-                                    PasswordHash = reader["PasswordHash"].ToString(),
-                                    PasswordSalt = reader["PasswordSalt"].ToString(),
-                                    CreationDate = Convert.ToDateTime(reader["CreationDate"]),
-                                    UpdateDate = Convert.ToDateTime(reader["UpdateDate"]),
-                                    LastLoginDate = Convert.ToDateTime(reader["LastLoginDate"]),
-                                    Status = Convert.ToInt32(reader["Status"]),
-                                    AccountType = reader["AccountType"].ToString()
-                                };
-                                AccountList.Add(Acc);
+                                Secret secret = new Secret();
+                                secret.PasswordHash = (byte[])reader["PasswordHash"];
+                                secret.Key = (byte[])reader["AESKey"];
+                                secret.IV = (byte[])reader["AESIV"];
+
+                                acc.AccountID = (int)reader["AccountID"];
+                                acc.PhoneNumber = reader["PhoneNumber"].ToString();
+                                acc.Email = reader["Email"].ToString();
+                                acc.PasswordHash = CryptoProcess.Decrypt_Aes(secret);
+                                acc.AESKey = (byte[])reader["AESKey"];
+                                acc.AESIV = (byte[])reader["AESIV"];
+                                acc.CreationDate = (DateTime)reader["CreationDate"];
+                                acc.UpdateDate = (DateTime)reader["UpdateDate"];
+                                acc.LastLoginDate = (DateTime)reader["LastLoginDate"];
+                                acc.Status = (int)reader["Status"];
+                                acc.AccountType = (string)reader["AccountType"];
                             }
+                            return acc;
                         }
                     }
                     catch(Exception e)
-                    { 
+                    {
+                        
                     }
                     finally
                     {
@@ -144,8 +143,66 @@ namespace RocketFreeMarketAPI.DatabaseConnection
                     }
                 }
             }
-            return AccountList;
+            return acc;
         }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        //public async Task<List<Account>> ExcuteCommand(string cmd)
+        //{
+        //    List<Account> AccountList = new List<Account>();
+        //    using (SqlConnection sqlconn = new SqlConnection(_connectionString))
+        //    {
+        //        using (SqlCommand sqlcmd = new SqlCommand(cmd, sqlconn))
+        //        {
+        //            try
+        //            {
+        //                sqlconn.Open();
+        //                using (SqlDataReader reader = await sqlcmd.ExecuteReaderAsync())
+        //                {                        
+        //                    while(await reader.ReadAsync())
+        //                    {
+        //                        Account Acc = new Account
+        //                        {
+        //                            AccountID = Convert.ToInt32(reader["AccountID"]),
+        //                            PhoneNumber = Convert.ToInt32(reader["PhoneNumber"]),
+        //                            Email = reader["Email"].ToString(),
+        //                            PasswordHash = reader["PasswordHash"].ToString(),
+        //                            PasswordSalt = reader["PasswordSalt"].ToString(),
+        //                            CreationDate = Convert.ToDateTime(reader["CreationDate"]),
+        //                            UpdateDate = Convert.ToDateTime(reader["UpdateDate"]),
+        //                            LastLoginDate = Convert.ToDateTime(reader["LastLoginDate"]),
+        //                            Status = Convert.ToInt32(reader["Status"]),
+        //                            AccountType = reader["AccountType"].ToString()
+        //                        };
+        //                        AccountList.Add(Acc);
+        //                    }
+        //                }
+        //            }
+        //            catch(Exception e)
+        //            { 
+        //            }
+        //            finally
+        //            {
+        //                sqlconn.Close();
+        //            }
+        //        }
+        //    }
+        //    return AccountList;
+        //}
 
 
 
