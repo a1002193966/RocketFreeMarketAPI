@@ -24,21 +24,23 @@ namespace RocketFreeMarketAPI.Controllers
         [HttpGet]
         public async Task<List<Account>> Get()
         {
-            List<Account> AccountList = await _conn.ExcuteCommand("SELECT * FROM Account");
+            List<Account> AccountList = new List<Account>();
+            //List<Account> AccountList = await _conn.ExcuteCommand("SELECT * FROM Account");
             return AccountList;   
         }
 
         // GET api/<AccountsController>/5
-        [HttpGet("{id}")]
-        public string Get(int id)
+        [HttpGet("{email}")]
+        public Account Get([FromRoute] string email)
         {
-            return "value";
+            return _conn.GetAccountInfo(email);
         }
 
         // POST api/<AccountsController>
         [HttpPost]
-        public void Post([FromBody] string value)
+        public bool Post([FromBody] Account acc)
         {
+            return _conn.Register(acc.Email, acc.PasswordHash, acc.PhoneNumber);
         }
 
         // PUT api/<AccountsController>/5
