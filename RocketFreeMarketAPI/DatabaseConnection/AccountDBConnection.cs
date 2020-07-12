@@ -7,6 +7,7 @@ using System.Data.SqlClient;
 using System.Linq;
 using System.Reflection.Metadata.Ecma335;
 using System.Threading.Tasks;
+using RocketFreeMarketAPI.Encryption;
 
 
 namespace RocketFreeMarketAPI.DatabaseConnection
@@ -15,6 +16,7 @@ namespace RocketFreeMarketAPI.DatabaseConnection
     {
         private readonly IConfiguration _configuration;
         private readonly string _connectionString;
+        private readonly AESEncryption _aes = new AESEncryption();
         public AccountDBConnection(IConfiguration configuration)
         {
             _configuration = configuration;
@@ -27,10 +29,12 @@ namespace RocketFreeMarketAPI.DatabaseConnection
         {
             if (!isExist(email))
             {
+                var (AESKey, AESIV) = _aes.CreateAES(password);
+
                 using(SqlConnection sqlconn = new SqlConnection(_connectionString))
                 {
                     string cmd = "INSERT INTO Account "+
-                                 "VALUES(@PhoneNumber, @Email, @PasswordHash, @PasswordSalt, GETDATE(), GETDATE(), GETDATE(), 0, 'Customer')";
+                                 "VALUES(@PhoneNumber, @Email, @PasswordHash, @AESKey, @AESIV, GETDATE(), GETDATE(), GETDATE(), 0, 'Customer')";
                     using (SqlCommand sqlcmd = new SqlCommand(cmd, sqlconn))
                     {
                         try
@@ -39,7 +43,8 @@ namespace RocketFreeMarketAPI.DatabaseConnection
                             sqlcmd.Parameters.AddWithValue("@PhoneNumber", phoneNumber);
                             sqlcmd.Parameters.AddWithValue("@Email", email);
                             sqlcmd.Parameters.AddWithValue("@PasswordHash", Convert.ToInt32(password));
-                            sqlcmd.Parameters.AddWithValue("@PasswordSalt", 10101010);
+                            sqlcmd.Parameters.AddWithValue("@AESKey", AESKey);
+                            sqlcmd.Parameters.AddWithValue("@AESIV", AESIV);
 
                             int result = sqlcmd.ExecuteNonQuery();
                             return result > 0;
@@ -88,22 +93,6 @@ namespace RocketFreeMarketAPI.DatabaseConnection
         }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
         public async Task<List<Account>> ExcuteCommand(string cmd)
         {
             List<Account> AccountList = new List<Account>();
@@ -124,7 +113,8 @@ namespace RocketFreeMarketAPI.DatabaseConnection
                                     PhoneNumber = Convert.ToInt32(reader["PhoneNumber"]),
                                     Email = reader["Email"].ToString(),
                                     PasswordHash = reader["PasswordHash"].ToString(),
-                                    PasswordSalt = reader["PasswordSalt"].ToString(),
+                                    AESKey = (byte[])reader["AESKey"],
+                                    AESIV = (byte[])reader["AESIV"],
                                     CreationDate = Convert.ToDateTime(reader["CreationDate"]),
                                     UpdateDate = Convert.ToDateTime(reader["UpdateDate"]),
                                     LastLoginDate = Convert.ToDateTime(reader["LastLoginDate"]),
