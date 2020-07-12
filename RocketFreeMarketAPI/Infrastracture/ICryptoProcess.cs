@@ -6,9 +6,9 @@ using System.Threading.Tasks;
 
 namespace RocketFreeMarketAPI.Infrastracture
 {
-    public interface IDBConnection
+    public interface ICryptoProcess
     {
-        bool Register(RegisterInput registerInput);
-        Account GetAccountInfo(string email);
+        Secret Encrypt_Aes(string password);
+        string Decrypt_Aes(Secret secret);
     }
 }

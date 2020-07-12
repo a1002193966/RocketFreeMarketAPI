@@ -19,13 +19,6 @@ namespace RocketFreeMarketAPI.Controllers
         }
 
 
-        // GET: <AccountsController>
-        [HttpGet]
-        public async Task<List<Account>> Get()
-        {
-            return await _conn.GetAllAccountInfo();
-        }
-
         // GET <AccountsController>/test@test.com
         [HttpGet("{email}")]
         public Account Get([FromRoute] string email)
@@ -36,9 +29,9 @@ namespace RocketFreeMarketAPI.Controllers
 
         // POST <AccountsController>
         [HttpPost]
-        public bool Post([FromBody] Account account)
+        public bool Post([FromBody] RegisterInput registerInput)
         {
-            return _conn.Register(account.Email, account.PasswordHash, account.PhoneNumber);
+            return _conn.Register(registerInput);
         }
 
         // PUT <AccountsController>/5

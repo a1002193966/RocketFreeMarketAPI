@@ -5,12 +5,13 @@ using System.Threading.Tasks;
 using System.Security.Cryptography;
 using System.IO;
 using RocketFreeMarketAPI.Models;
+using RocketFreeMarketAPI.Infrastracture;
 
 namespace RocketFreeMarketAPI.Crypto
 {
-    public static class CryptoProcess
+    public class CryptoProcess : ICryptoProcess
     {
-        public static Secret Encrypt_Aes(string password)
+        public Secret Encrypt_Aes(string password)
         {
             Secret secret = new Secret();
 
@@ -35,7 +36,7 @@ namespace RocketFreeMarketAPI.Crypto
         }
 
 
-        public static string Decrypt_Aes(Secret secret)
+        public string Decrypt_Aes(Secret secret)
         {
             string password = null;
             using (Aes aes = Aes.Create())

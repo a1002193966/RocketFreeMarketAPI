@@ -10,6 +10,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using RocketFreeMarketAPI.Crypto;
 using RocketFreeMarketAPI.DatabaseConnection;
 using RocketFreeMarketAPI.Infrastracture;
 
@@ -34,6 +35,7 @@ namespace RocketFreeMarketAPI
                                                             ));
             services.AddControllers();
             services.AddSingleton<IDBConnection, AccountDBConnection>();
+            services.AddTransient<ICryptoProcess, CryptoProcess>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
