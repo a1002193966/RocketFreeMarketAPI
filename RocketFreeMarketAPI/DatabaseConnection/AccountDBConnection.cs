@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 
 namespace RocketFreeMarketAPI.DatabaseConnection
 {
-    public class AccountDBConnection : IDBConnection
+    public class AccountDBConnection : IDBConnection       
     {
         private readonly IConfiguration _configuration;
         private readonly ICryptoProcess _cryptoProcess;
