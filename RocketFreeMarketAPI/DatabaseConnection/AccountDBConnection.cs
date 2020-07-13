@@ -27,52 +27,173 @@ namespace RocketFreeMarketAPI.DatabaseConnection
             _accessConnection = _configuration.GetConnectionString("AccessConnection");
         }
 
+
         public bool Register(RegisterInput registerInput)
         {
             if (!isExist(registerInput.Email))
             {
-                Secret secret = _cryptoProcess.Encrypt_Aes(registerInput.Password);
-                string defCmd = "INSERT INTO Account " +
-                                "VALUES(@PhoneNumber, @Email, @PasswordHash, @AesIV, GETDATE(), GETDATE(), GETDATE(), 0, 'Customer')";
-                string accCmd = "INSERT INTO Access " +
-                                "VALUES(@AccountID, @AesKey)";
-
-                SqlConnection defConn = new SqlConnection(_defaultConnection);
-                SqlConnection accConn = new SqlConnection(_accessConnection);          
-                SqlCommand defaultcmd = new SqlCommand(defCmd, defConn);
-                SqlCommand accesscmd = new SqlCommand(accCmd, accConn);
+                Secret secret = _cryptoProcess.Encrypt_Aes(registerInput.Password);   
+                SqlConnection defaultConnection = new SqlConnection(_defaultConnection);
+                SqlConnection accessConnection = new SqlConnection(_accessConnection);
+                SqlTransaction defaultTransaction = null;
+                SqlTransaction accessTransaction = null;
+                Account account = new Account()
+                {
+                    Email = registerInput.Email,
+                    PasswordHash = secret.Cipher,
+                    PhoneNumber = registerInput.PhoneNumber,
+                    AesIV = secret.IV,
+                    AccountType = "Customer"
+                };
+                List<string> accountProperty = new List<string>()
+                {
+                    "PhoneNumber",
+                    "Email",
+                    "PasswordHash",
+                    "AesIV",
+                    "AccountType"
+                };
+                List<string> accessProperty = new List<string>()
+                {
+                    "AccountID",
+                    "AesKey"
+                };
+                List<string> userProperty = new List<string>()
+                {
+                    "AccountID"
+                };
+                string accountInsertCMD = "INSERT INTO Account(PhoneNumber, Email, PasswordHash, AesIV, AccountType) VALUES(@PhoneNumber, @Email, @PasswordHash, @AesIV, @AccountType)";
+                string accessInsertCMD = "INSERT INTO Access(AccountID, AesKey) VALUES(@AccountID, @AesKey)";
+                string userInsertCMD = "INSERT INTO [User](AccountID) VALUES(@AccountID)";
 
                 try
                 {
-                    defConn.Open(); 
-                    defaultcmd.Parameters.AddWithValue("@PhoneNumber", registerInput.PhoneNumber);
-                    defaultcmd.Parameters.AddWithValue("@Email", registerInput.Email);
-                    defaultcmd.Parameters.AddWithValue("@PasswordHash", secret.Cipher);
-                    defaultcmd.Parameters.AddWithValue("@AesIV", secret.IV);
-                    int defaultResult = defaultcmd.ExecuteNonQuery();
-                    if(defaultResult > 0)
+                    defaultConnection.Open();
+                    defaultTransaction = defaultConnection.BeginTransaction();
+                    int accountInsertResult = insertData<Account>(defaultConnection, defaultTransaction, account, accountProperty, accountInsertCMD);
+                    if (accountInsertResult > 0)
                     {
-                        accConn.Open();
-                        accesscmd.Parameters.AddWithValue("@AccountID", getAccountID(registerInput.Email));
-                        accesscmd.Parameters.AddWithValue("@AesKey", secret.Key);
-                        int accessResult = accesscmd.ExecuteNonQuery();
-                        return accessResult > 0;
+                        int accountID = getAccountID(defaultConnection, defaultTransaction, registerInput.Email);
+                        if (accountID != 0)
+                        {
+                            Access access = new Access()
+                            {
+                                AccountID = accountID,
+                                AesKey = secret.Key
+                            };
+                            accessConnection.Open();
+                            accessTransaction = accessConnection.BeginTransaction();
+                            int accessInsertResult = insertData<Access>(accessConnection, accessTransaction, access, accessProperty, accessInsertCMD);
+                            if (accessInsertResult > 0)
+                            {
+                                User user = new User()
+                                {
+                                    AccountID = accountID
+                                };
+                                int userInsertResult = insertData<User>(defaultConnection, defaultTransaction, user, userProperty, userInsertCMD);
+                                if(userInsertResult > 0)
+                                {
+                                    accessTransaction.Commit();
+                                    defaultTransaction.Commit();
+                                    return true;
+                                }
+                                else
+                                {
+                                    accessTransaction.Rollback();
+                                    defaultTransaction.Rollback();
+                                    return false;
+                                }
+                            }
+                            else
+                            {
+                                accessTransaction.Rollback();
+                                defaultTransaction.Rollback();
+                                return false;
+                            }
+                        }
+                        else
+                        {
+                            defaultTransaction.Rollback();
+                            return false;
+                        }                       
                     }
-                    return false;                                 
+                    else
+                    {
+                        defaultTransaction.Rollback();
+                        return false;
+                    }            
                 }
-                catch(Exception e)
+                catch (Exception e)
+                {
+                    if (defaultConnection != null)
+                        defaultTransaction.Rollback();
+                    if (accessTransaction != null)
+                        accessTransaction.Rollback();
+                    return false;
+                }
+                finally
+                {              
+                    defaultConnection.Close();
+                    accessConnection.Close();
+                }
+            }
+            else
+                return false;
+        }
+
+
+        private int insertData<T>(SqlConnection conn, SqlTransaction transaction, T model, List<String> property, String cmd)
+        {
+            int result = 0;
+            SqlCommand sqlcmd = null;
+            try
+            {
+                sqlcmd = new SqlCommand(cmd, conn, transaction);
+                foreach (string x in property)
+                {
+                    sqlcmd.Parameters.AddWithValue("@" + x, model.GetType().GetProperty(x).GetValue(model, null));
+                }
+                result = sqlcmd.ExecuteNonQuery();
+            }
+            catch (Exception e)
+            {
+                throw;
+            }
+            finally
+            {
+                sqlcmd.Dispose();
+            }
+            return result;
+        }
+
+
+        private int getAccountID(SqlConnection sqlconn, SqlTransaction sqltrans, string email)
+        {
+            string cmd = "SELECT AccountID FROM Account WHERE Email = @Email";
+            using (SqlCommand sqlcmd = new SqlCommand(cmd, sqlconn, sqltrans))
+            {
+                try
+                {
+                    sqlcmd.Parameters.AddWithValue("@Email", email);
+                    using (SqlDataReader reader = sqlcmd.ExecuteReader())
+                    {
+                        int ID = 0;
+                        while (reader.Read())
+                        {
+                            ID = (int)reader["AccountID"];
+                        }
+                        return ID;
+                    }
+                }
+                catch (Exception e)
                 {
                     throw;
                 }
                 finally
                 {
-                    defaultcmd.Dispose();
-                    accesscmd.Dispose();
-                    defConn.Close();
-                    accConn.Close();
-                }        
+                    sqlcmd.Dispose();
+                }
             }
-            return false;
         }
 
 
@@ -114,7 +235,7 @@ namespace RocketFreeMarketAPI.DatabaseConnection
                 if(account != null)
                 {
                     accConn.Open();
-                    accesscmd.Parameters.AddWithValue("@AccountID", getAccountID(email));
+                    accesscmd.Parameters.AddWithValue("@AccountID", account.AccountID);
                     SqlDataReader accessReader = accesscmd.ExecuteReader();
                     while(accessReader.Read())
                     {
@@ -165,42 +286,6 @@ namespace RocketFreeMarketAPI.DatabaseConnection
                 }
             }
         }
-
-        private int getAccountID(string email)
-        {
-            using (SqlConnection sqlconn = new SqlConnection(_defaultConnection))
-            {
-                string cmd = "SELECT AccountID FROM Account WHERE Email = @Email";
-                using (SqlCommand sqlcmd = new SqlCommand(cmd, sqlconn))
-                {
-                    try
-                    {
-                        sqlconn.Open();
-                        sqlcmd.Parameters.AddWithValue("@Email", email);
-                        using (SqlDataReader reader = sqlcmd.ExecuteReader())
-                        {
-                            int ID = 0;
-                            while(reader.Read())
-                            {
-                                ID = (int)reader["AccountID"];
-                            }
-                            return ID;
-                        }
-                    }
-                    catch (Exception e)
-                    {
-                        throw;
-                    }
-                    finally
-                    {
-                        sqlconn.Close();
-                    }
-                }
-            }
-        }
-
-       
-
 
     }
 }
