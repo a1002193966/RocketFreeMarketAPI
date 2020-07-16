@@ -26,13 +26,23 @@ namespace RocketFreeMarketAPI.Controllers
             return _conn.GetAccountInfo(email);
         }
 
+        [HttpGet("login")]
+        public bool Login([FromBody] LoginInput loginInput)
+        {
+            return _conn.Login(loginInput);
+        }
 
         // POST <AccountsController>
-        [HttpPost]
-        public bool Post([FromBody] RegisterInput registerInput)
+        [HttpPost("register")]
+        public bool Register([FromBody] RegisterInput registerInput)
         {
             return _conn.Register(registerInput);
         }
+
+        
+
+
+
 
         // PUT <AccountsController>/5
         [HttpPut("{id}")]

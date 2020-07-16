@@ -1,13 +1,11 @@
 ﻿using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.Configuration;
-using RocketFreeMarketAPI.Crypto;
 using RocketFreeMarketAPI.Infrastracture;
 using RocketFreeMarketAPI.Models;
 using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Linq;
-using System.Reflection.Metadata.Ecma335;
 using System.Threading.Tasks;
 
 
@@ -62,8 +60,8 @@ namespace RocketFreeMarketAPI.DatabaseConnection
                 {
                     "AccountID"
                 };
-                string accountInsertCMD = "INSERT INTO Account(PhoneNumber, Email, PasswordHash, AesIV, AccountType) VALUES(@PhoneNumber, @Email, @PasswordHash, @AesIV, @AccountType)";
-                string accessInsertCMD = "INSERT INTO Access(AccountID, AesKey) VALUES(@AccountID, @AesKey)";
+                string accountInsertCMD = "INSERT INTO [Account](PhoneNumber, Email, PasswordHash, AesIV, AccountType) VALUES(@PhoneNumber, @Email, @PasswordHash, @AesIV, @AccountType)";
+                string accessInsertCMD = "INSERT INTO [Access](AccountID, AesKey) VALUES(@AccountID, @AesKey)";
                 string userInsertCMD = "INSERT INTO [User](AccountID) VALUES(@AccountID)";
 
                 try
@@ -142,6 +140,75 @@ namespace RocketFreeMarketAPI.DatabaseConnection
         }
 
 
+        public bool Login(LoginInput loginInput)
+        {
+            return verifyLogin(loginInput);
+        }
+
+
+        public Account GetAccountInfo(string email)
+        {
+            Account account = new Account();
+            if (!isExist(email))
+            {
+                return account;
+            }
+
+            string defCmd = "SELECT * FROM [Account] WHERE Email = @Email";
+            string accCmd = "SELECT AesKey FROM [Access] WHERE AccountID = @AccountID";
+
+            SqlConnection defaultConnection = new SqlConnection(_defaultConnection);
+            SqlConnection accessConnection = new SqlConnection(_accessConnection);
+            SqlCommand defaultcmd = new SqlCommand(defCmd, defaultConnection);
+            SqlCommand accesscmd = new SqlCommand(accCmd, accessConnection);
+
+            try
+            {
+                defaultConnection.Open();
+                defaultcmd.Parameters.AddWithValue("@Email", email);
+                SqlDataReader defaultReader = defaultcmd.ExecuteReader();
+                while (defaultReader.Read())
+                {
+                    account.AccountID = (int)defaultReader["AccountID"];
+                    account.PhoneNumber = (string)defaultReader["PhoneNumber"];
+                    account.Email = (string)defaultReader["Email"];
+                    account.PasswordHash = (byte[])defaultReader["PasswordHash"];
+                    account.AesIV = (byte[])defaultReader["AesIV"];
+                    account.CreationDate = (DateTime)defaultReader["CreationDate"];
+                    account.UpdateDate = (DateTime)defaultReader["UpdateDate"];
+                    account.LastLoginDate = (DateTime)defaultReader["LastLoginDate"];
+                    account.Status = (int)defaultReader["Status"];
+                    account.AccountType = (string)defaultReader["AccountType"];
+                }
+                defaultReader.Close();
+                if (account.Email != null)
+                {
+                    accessConnection.Open();
+                    accesscmd.Parameters.AddWithValue("@AccountID", account.AccountID);
+                    SqlDataReader accessReader = accesscmd.ExecuteReader();
+                    while (accessReader.Read())
+                    {
+                        account.AesKey = (byte[])accessReader["AesKey"];
+                    }
+                    accessReader.Close();
+                    return account;
+                }
+                return null;
+            }
+            catch (Exception e)
+            {
+                throw;
+            }
+            finally
+            {
+                accesscmd.Dispose();
+                defaultcmd.Dispose();
+                accessConnection.Close();
+                defaultConnection.Close();
+            }
+        }
+
+
         private int insertData<T>(SqlConnection conn, SqlTransaction transaction, T model, List<String> property, String cmd)
         {
             int result = 0;
@@ -169,7 +236,7 @@ namespace RocketFreeMarketAPI.DatabaseConnection
 
         private int getAccountID(SqlConnection sqlconn, SqlTransaction sqltrans, string email)
         {
-            string cmd = "SELECT AccountID FROM Account WHERE Email = @Email";
+            string cmd = "SELECT AccountID FROM [Account] WHERE Email = @Email";
             using (SqlCommand sqlcmd = new SqlCommand(cmd, sqlconn, sqltrans))
             {
                 try
@@ -197,56 +264,48 @@ namespace RocketFreeMarketAPI.DatabaseConnection
         }
 
 
-        public Account GetAccountInfo(string email)
+        private bool verifyLogin(LoginInput loginInput)
         {
             Account account = new Account();
-            if (!isExist(email))
+            if (!isExist(loginInput.Email))
             {
-                return account;
+                return false;
             }
 
-            string defCmd = "SELECT * FROM Account WHERE Email = @Email";
-            string accCmd = "SELECT AesKey FROM Access WHERE AccountID = @AccountID";
-     
-            SqlConnection defConn = new SqlConnection(_defaultConnection);
-            SqlConnection accConn = new SqlConnection(_accessConnection);
-            SqlCommand defaultcmd = new SqlCommand(defCmd, defConn);
-            SqlCommand accesscmd = new SqlCommand(accCmd, accConn);
+            string defCmd = "SELECT AccountID, PasswordHash, AesIV FROM [Account] WHERE Email = @Email";
+            string accCmd = "SELECT AesKey FROM [Access] WHERE AccountID = @AccountID";
+
+            SqlConnection defaultConnection = new SqlConnection(_defaultConnection);
+            SqlConnection accessConnection = new SqlConnection(_accessConnection);
+            SqlCommand defaultcmd = new SqlCommand(defCmd, defaultConnection);
+            SqlCommand accesscmd = new SqlCommand(accCmd, accessConnection);
 
             try
             {
-                defConn.Open();
-                defaultcmd.Parameters.AddWithValue("@Email", email);
+                defaultConnection.Open();
+                defaultcmd.Parameters.AddWithValue("@Email", loginInput.Email);
                 SqlDataReader defaultReader = defaultcmd.ExecuteReader();
-                while(defaultReader.Read())
+                while (defaultReader.Read())
                 {
                     account.AccountID = (int)defaultReader["AccountID"];
-                    account.PhoneNumber = (string)defaultReader["PhoneNumber"];
-                    account.Email = (string)defaultReader["Email"];
                     account.PasswordHash = (byte[])defaultReader["PasswordHash"];
-                    account.AesIV = (byte[])defaultReader["AesIV"];
-                    account.CreationDate = (DateTime)defaultReader["CreationDate"];
-                    account.UpdateDate = (DateTime)defaultReader["UpdateDate"];
-                    account.LastLoginDate = (DateTime)defaultReader["LastLoginDate"];
-                    account.Status = (int)defaultReader["Status"];
-                    account.AccountType = (string)defaultReader["AccountType"];
+                    account.AesIV = (byte[])defaultReader["AesIV"];                 
                 }
                 defaultReader.Close();
-                if(account != null)
+                if (account.AesIV != null)
                 {
-                    accConn.Open();
+                    accessConnection.Open();
                     accesscmd.Parameters.AddWithValue("@AccountID", account.AccountID);
                     SqlDataReader accessReader = accesscmd.ExecuteReader();
-                    while(accessReader.Read())
+                    while (accessReader.Read())
                     {
                         account.AesKey = (byte[])accessReader["AesKey"];
                     }
-                    accessReader.Close();
-                    return account;
+                    accessReader.Close();              
                 }
-                return null;
+                return hashCompare(account.PasswordHash, _cryptoProcess.Encrypt_Aes_With_Key_IV(loginInput.Password, account.AesKey, account.AesIV));
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 throw;
             }
@@ -254,16 +313,28 @@ namespace RocketFreeMarketAPI.DatabaseConnection
             {
                 accesscmd.Dispose();
                 defaultcmd.Dispose();
-                accConn.Close();
-                defConn.Close();
+                accessConnection.Close();
+                defaultConnection.Close();
             }
+        }
+
+        private bool hashCompare(byte[] hash1, byte[] hash2)
+        {
+            if (hash1.Length != hash2.Length)
+                return false;
+            for(int i = 0; i < hash1.Length; i++)
+            {
+                if (hash1[i] != hash2[i])
+                    return false;
+            }
+            return true;
         }
 
         private bool isExist(string email)
         {
             using (SqlConnection sqlconn = new SqlConnection(_defaultConnection))
             {
-                string cmd = "SELECT AccountID FROM Account WHERE Email = @Email";
+                string cmd = "SELECT AccountID FROM [Account] WHERE Email = @Email";
                 using (SqlCommand sqlcmd = new SqlCommand(cmd, sqlconn))
                 {
                     try

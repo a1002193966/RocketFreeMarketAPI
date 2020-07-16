@@ -35,6 +35,30 @@ namespace RocketFreeMarketAPI.Crypto
             return secret;
         }
 
+        public byte[] Encrypt_Aes_With_Key_IV(string password, byte[] key, byte[] IV)
+        {
+            byte[] secret;
+
+            using (Aes aes = Aes.Create())
+            {
+                aes.Key = key;
+                aes.IV = IV;
+                ICryptoTransform encryptor = aes.CreateEncryptor(aes.Key, aes.IV);
+                using (MemoryStream ms = new MemoryStream())
+                {
+                    using (CryptoStream cs = new CryptoStream(ms, encryptor, CryptoStreamMode.Write))
+                    {
+                        using (StreamWriter sw = new StreamWriter(cs))
+                        {
+                            sw.Write(password);
+                        }
+                        secret = ms.ToArray();
+                    }
+                }
+            }
+            return secret;
+        }
+
 
         public string Decrypt_Aes(Secret secret)
         {
