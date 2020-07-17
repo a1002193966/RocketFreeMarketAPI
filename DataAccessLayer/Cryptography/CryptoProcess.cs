@@ -1,13 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using System.Security.Cryptography;
+﻿using DataAccessLayer.Infrastructure;
+using Entities;
+using System;
 using System.IO;
-using RocketFreeMarketAPI.Models;
-using RocketFreeMarketAPI.Infrastracture;
+using System.Security.Cryptography;
 
-namespace RocketFreeMarketAPI.Crypto
+
+namespace DataAccessLayer.Cryptography
 {
     public class CryptoProcess : ICryptoProcess
     {
@@ -22,7 +20,7 @@ namespace RocketFreeMarketAPI.Crypto
                 ICryptoTransform encryptor = aes.CreateEncryptor(aes.Key, aes.IV);
                 using (MemoryStream ms = new MemoryStream())
                 {
-                    using(CryptoStream cs = new CryptoStream(ms, encryptor, CryptoStreamMode.Write))
+                    using (CryptoStream cs = new CryptoStream(ms, encryptor, CryptoStreamMode.Write))
                     {
                         using (StreamWriter sw = new StreamWriter(cs))
                         {
