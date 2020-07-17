@@ -1,6 +1,7 @@
 ﻿using System;
 
-namespace RocketFreeMarketAPI.Models
+
+namespace Entities
 {
     public class Account
     {

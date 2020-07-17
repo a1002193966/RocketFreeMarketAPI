@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Entities;
 using Microsoft.AspNetCore.Mvc;
 using RocketFreeMarketAPI.Infrastracture;
-using RocketFreeMarketAPI.Models;
 
 namespace RocketFreeMarketAPI.Controllers
 {
@@ -19,20 +19,21 @@ namespace RocketFreeMarketAPI.Controllers
         }
 
 
-        // GET <AccountsController>/test@test.com
+        // GetAccountInfo <AccountsController>/test@test.com
         [HttpGet("{email}")]
-        public Account Get([FromRoute] string email)
+        public Account GetAccountInfo([FromRoute] string email)
         {
             return _conn.GetAccountInfo(email);
         }
 
-        [HttpGet("login")]
+        //Login <AccountsController>/login
+        [HttpPost("login")]
         public bool Login([FromBody] LoginInput loginInput)
         {
             return _conn.Login(loginInput);
         }
 
-        // POST <AccountsController>
+        // Register <AccountsController>/register
         [HttpPost("register")]
         public bool Register([FromBody] RegisterInput registerInput)
         {

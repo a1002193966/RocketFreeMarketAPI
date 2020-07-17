@@ -4,8 +4,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Security.Cryptography;
 using System.IO;
-using RocketFreeMarketAPI.Models;
 using RocketFreeMarketAPI.Infrastracture;
+using Entities;
 
 namespace RocketFreeMarketAPI.Crypto
 {
