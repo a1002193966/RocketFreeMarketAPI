@@ -1,0 +1,12 @@
+C:\Users\shiin\Desktop\RocketFreeMarketAPI\DataAccessLayer\bin\Debug\netcoreapp3.1\DataAccessLayer.deps.json
+C:\Users\shiin\Desktop\RocketFreeMarketAPI\DataAccessLayer\bin\Debug\netcoreapp3.1\DataAccessLayer.dll
+C:\Users\shiin\Desktop\RocketFreeMarketAPI\DataAccessLayer\bin\Debug\netcoreapp3.1\Entities.dll
+C:\Users\shiin\Desktop\RocketFreeMarketAPI\DataAccessLayer\bin\Debug\netcoreapp3.1\Entities.pdb
+C:\Users\shiin\Desktop\RocketFreeMarketAPI\DataAccessLayer\obj\Debug\netcoreapp3.1\DataAccessLayer.csprojAssemblyReference.cache
+C:\Users\shiin\Desktop\RocketFreeMarketAPI\DataAccessLayer\obj\Debug\netcoreapp3.1\DataAccessLayer.AssemblyInfoInputs.cache
+C:\Users\shiin\Desktop\RocketFreeMarketAPI\DataAccessLayer\obj\Debug\netcoreapp3.1\DataAccessLayer.AssemblyInfo.cs
+C:\Users\shiin\Desktop\RocketFreeMarketAPI\DataAccessLayer\obj\Debug\netcoreapp3.1\DataAccessLayer.csproj.CopyComplete
+C:\Users\shiin\Desktop\RocketFreeMarketAPI\DataAccessLayer\bin\Debug\netcoreapp3.1\DataAccessLayer.pdb
+C:\Users\shiin\Desktop\RocketFreeMarketAPI\DataAccessLayer\obj\Debug\netcoreapp3.1\DataAccessLayer.csproj.CoreCompileInputs.cache
+C:\Users\shiin\Desktop\RocketFreeMarketAPI\DataAccessLayer\obj\Debug\netcoreapp3.1\DataAccessLayer.dll
+C:\Users\shiin\Desktop\RocketFreeMarketAPI\DataAccessLayer\obj\Debug\netcoreapp3.1\DataAccessLayer.pdb
