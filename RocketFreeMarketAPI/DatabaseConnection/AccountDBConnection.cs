@@ -33,10 +33,13 @@ namespace RocketFreeMarketAPI.DatabaseConnection
             if (!isExist(registerInput.Email))
             {
                 Secret secret = _cryptoProcess.Encrypt_Aes(registerInput.Password);   
+
                 SqlConnection defaultConnection = new SqlConnection(_defaultConnection);
                 SqlConnection accessConnection = new SqlConnection(_accessConnection);
+
                 SqlTransaction defaultTransaction = null;
                 SqlTransaction accessTransaction = null;
+
                 Account account = new Account()
                 {
                     Email = registerInput.Email,
@@ -45,6 +48,7 @@ namespace RocketFreeMarketAPI.DatabaseConnection
                     AesIV = secret.IV,
                     AccountType = "Customer"
                 };
+
                 List<string> accountProperty = new List<string>()
                 {
                     "PhoneNumber",
@@ -62,15 +66,12 @@ namespace RocketFreeMarketAPI.DatabaseConnection
                 {
                     "AccountID"
                 };
-                string accountInsertCMD = "INSERT INTO [Account](PhoneNumber, Email, PasswordHash, AesIV, AccountType) VALUES(@PhoneNumber, @Email, @PasswordHash, @AesIV, @AccountType)";
-                string accessInsertCMD = "INSERT INTO [Access](AccountID, AesKey) VALUES(@AccountID, @AesKey)";
-                string userInsertCMD = "INSERT INTO [User](AccountID) VALUES(@AccountID)";
 
                 try
                 {
                     defaultConnection.Open();
                     defaultTransaction = defaultConnection.BeginTransaction();
-                    int accountInsertResult = insertData<Account>(defaultConnection, defaultTransaction, account, accountProperty, accountInsertCMD);
+                    int accountInsertResult = insertData<Account>(defaultConnection, defaultTransaction, account, accountProperty, Constant.accountInsertCMD);
                     if (accountInsertResult > 0)
                     {
                         int accountID = getAccountID(defaultConnection, defaultTransaction, registerInput.Email);
@@ -83,14 +84,14 @@ namespace RocketFreeMarketAPI.DatabaseConnection
                             };
                             accessConnection.Open();
                             accessTransaction = accessConnection.BeginTransaction();
-                            int accessInsertResult = insertData<Access>(accessConnection, accessTransaction, access, accessProperty, accessInsertCMD);
+                            int accessInsertResult = insertData<Access>(accessConnection, accessTransaction, access, accessProperty, Constant.accessInsertCMD);
                             if (accessInsertResult > 0)
                             {
                                 User user = new User()
                                 {
                                     AccountID = accountID
                                 };
-                                int userInsertResult = insertData<User>(defaultConnection, defaultTransaction, user, userProperty, userInsertCMD);
+                                int userInsertResult = insertData<User>(defaultConnection, defaultTransaction, user, userProperty, Constant.userInsertCMD);
                                 if(userInsertResult > 0)
                                 {
                                     accessTransaction.Commit();
@@ -156,13 +157,11 @@ namespace RocketFreeMarketAPI.DatabaseConnection
                 return account;
             }
 
-            string defCmd = "SELECT * FROM [Account] WHERE Email = @Email";
-            string accCmd = "SELECT AesKey FROM [Access] WHERE AccountID = @AccountID";
 
             SqlConnection defaultConnection = new SqlConnection(_defaultConnection);
             SqlConnection accessConnection = new SqlConnection(_accessConnection);
-            SqlCommand defaultcmd = new SqlCommand(defCmd, defaultConnection);
-            SqlCommand accesscmd = new SqlCommand(accCmd, accessConnection);
+            SqlCommand defaultcmd = new SqlCommand(Constant.checkUniqueEmailCmd, defaultConnection);
+            SqlCommand accesscmd = new SqlCommand(Constant.GetAccountCmd, accessConnection);
 
             try
             {
@@ -238,8 +237,7 @@ namespace RocketFreeMarketAPI.DatabaseConnection
 
         private int getAccountID(SqlConnection sqlconn, SqlTransaction sqltrans, string email)
         {
-            string cmd = "SELECT AccountID FROM [Account] WHERE Email = @Email";
-            using (SqlCommand sqlcmd = new SqlCommand(cmd, sqlconn, sqltrans))
+            using (SqlCommand sqlcmd = new SqlCommand(Constant.GetAccountIDCmd, sqlconn, sqltrans))
             {
                 try
                 {
@@ -274,13 +272,10 @@ namespace RocketFreeMarketAPI.DatabaseConnection
                 return false;
             }
 
-            string defCmd = "SELECT AccountID, PasswordHash, AesIV FROM [Account] WHERE Email = @Email";
-            string accCmd = "SELECT AesKey FROM [Access] WHERE AccountID = @AccountID";
-
             SqlConnection defaultConnection = new SqlConnection(_defaultConnection);
             SqlConnection accessConnection = new SqlConnection(_accessConnection);
-            SqlCommand defaultcmd = new SqlCommand(defCmd, defaultConnection);
-            SqlCommand accesscmd = new SqlCommand(accCmd, accessConnection);
+            SqlCommand defaultcmd = new SqlCommand(Constant.VerifyAccountCmd, defaultConnection);
+            SqlCommand accesscmd = new SqlCommand(Constant.GetKeyAccountCmd, accessConnection);
 
             try
             {
@@ -336,8 +331,7 @@ namespace RocketFreeMarketAPI.DatabaseConnection
         {
             using (SqlConnection sqlconn = new SqlConnection(_defaultConnection))
             {
-                string cmd = "SELECT AccountID FROM [Account] WHERE Email = @Email";
-                using (SqlCommand sqlcmd = new SqlCommand(cmd, sqlconn))
+                using (SqlCommand sqlcmd = new SqlCommand(Constant.GetAccountIDCmd, sqlconn))
                 {
                     try
                     {
@@ -359,7 +353,6 @@ namespace RocketFreeMarketAPI.DatabaseConnection
                 }
             }
         }
-
 
 
     }
