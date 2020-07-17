@@ -10,9 +10,10 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using RocketFreeMarketAPI.Crypto;
-using RocketFreeMarketAPI.DatabaseConnection;
-using RocketFreeMarketAPI.Infrastracture;
+using DataAccessLayer.Infrastructure;
+using DataAccessLayer.DatabaseConnection;
+using DataAccessLayer.Cryptography;
+
 
 namespace RocketFreeMarketAPI
 {
@@ -30,11 +31,13 @@ namespace RocketFreeMarketAPI
         {
             services.AddCors(options => options.AddPolicy(name: "CorsPolicy", 
                                                             builder => {
-                                                                builder.AllowAnyOrigin();
+                                                                builder.AllowAnyOrigin()
+                                                                       .AllowAnyHeader()
+                                                                       .AllowAnyMethod();
                                                             }
                                                             ));
             services.AddControllers();
-            services.AddSingleton<IDBConnection, AccountDBConnection>();
+            services.AddSingleton<IDatabaseConnection, AccountConnection>();
             services.AddTransient<ICryptoProcess, CryptoProcess>();
         }
 

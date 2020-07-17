@@ -4,16 +4,18 @@ using System.Linq;
 using System.Threading.Tasks;
 using Entities;
 using Microsoft.AspNetCore.Mvc;
-using RocketFreeMarketAPI.Infrastracture;
+using DataAccessLayer.Infrastructure;
+using Microsoft.AspNetCore.Cors;
 
 namespace RocketFreeMarketAPI.Controllers
 {
     [Route("[controller]")]
     [ApiController]
+    [EnableCors("CorsPolicy")]
     public class AccountsController : ControllerBase
     {
-        private readonly IDBConnection _conn;
-        public AccountsController(IDBConnection conn)
+        private readonly IDatabaseConnection _conn;
+        public AccountsController(IDatabaseConnection conn)
         {
             _conn = conn;
         }
