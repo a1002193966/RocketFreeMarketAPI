@@ -14,8 +14,8 @@ namespace RocketFreeMarketAPI.Controllers
     [EnableCors("CorsPolicy")]
     public class AccountsController : ControllerBase
     {
-        private readonly IDatabaseConnection _conn;
-        public AccountsController(IDatabaseConnection conn)
+        private readonly IAccountConnection _conn;
+        public AccountsController(IAccountConnection conn)
         {
             _conn = conn;
         }

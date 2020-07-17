@@ -37,7 +37,7 @@ namespace RocketFreeMarketAPI
                                                             }
                                                             ));
             services.AddControllers();
-            services.AddSingleton<IDatabaseConnection, AccountConnection>();
+            services.AddSingleton<IAccountConnection, AccountConnection>();
             services.AddTransient<ICryptoProcess, CryptoProcess>();
         }
 

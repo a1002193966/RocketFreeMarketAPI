@@ -7,7 +7,7 @@ using System.Text;
 
 namespace DataAccessLayer.DatabaseConnection
 {
-    public class AccountConnection : IDatabaseConnection
+    public class AccountConnection : IAccountConnection
     {
         private readonly ICryptoProcess _cryptoProcess;
         private readonly string _defaultConnection = "Server=.\\SQLEXPRESS; Database=RocketFreeMarket; Trusted_Connection=True;";
