@@ -3,7 +3,7 @@
 
 namespace DataAccessLayer.Infrastructure
 {
-    public interface IDatabaseConnection
+    public interface IAccountConnection
     {     
         bool Register(RegisterInput registerInput);
         bool Login(LoginInput loginInput);
