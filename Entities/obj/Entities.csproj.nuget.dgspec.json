@@ -1,23 +1,23 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\z8410\\Desktop\\RocketFreeMarkeAPI\\RocketFreeMarketAPI\\Entities\\Entities.csproj": {}
+    "C:\\Users\\sam\\Desktop\\Rocket\\RocketFreeMarketAPI\\Entities\\Entities.csproj": {}
   },
   "projects": {
-    "C:\\Users\\z8410\\Desktop\\RocketFreeMarkeAPI\\RocketFreeMarketAPI\\Entities\\Entities.csproj": {
+    "C:\\Users\\sam\\Desktop\\Rocket\\RocketFreeMarketAPI\\Entities\\Entities.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\z8410\\Desktop\\RocketFreeMarkeAPI\\RocketFreeMarketAPI\\Entities\\Entities.csproj",
+        "projectUniqueName": "C:\\Users\\sam\\Desktop\\Rocket\\RocketFreeMarketAPI\\Entities\\Entities.csproj",
         "projectName": "Entities",
-        "projectPath": "C:\\Users\\z8410\\Desktop\\RocketFreeMarkeAPI\\RocketFreeMarketAPI\\Entities\\Entities.csproj",
-        "packagesPath": "C:\\Users\\z8410\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\z8410\\Desktop\\RocketFreeMarkeAPI\\RocketFreeMarketAPI\\Entities\\obj\\",
+        "projectPath": "C:\\Users\\sam\\Desktop\\Rocket\\RocketFreeMarketAPI\\Entities\\Entities.csproj",
+        "packagesPath": "C:\\Users\\sam\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\sam\\Desktop\\Rocket\\RocketFreeMarketAPI\\Entities\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder"
         ],
         "configFilePaths": [
-          "C:\\Users\\z8410\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\sam\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
         "originalTargetFrameworks": [
@@ -55,7 +55,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\3.1.301\\RuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\3.1.101\\RuntimeIdentifierGraph.json"
         }
       }
     }
