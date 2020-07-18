@@ -1,20 +1,23 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\shiin\\Desktop\\RocketFreeMarketAPI\\DataAccessLayer\\DataAccessLayer.csproj": {}
+    "C:\\Users\\z8410\\Desktop\\RocketFreeMarkeAPI\\RocketFreeMarketAPI\\DataAccessLayer\\DataAccessLayer.csproj": {}
   },
   "projects": {
-    "C:\\Users\\shiin\\Desktop\\RocketFreeMarketAPI\\DataAccessLayer\\DataAccessLayer.csproj": {
+    "C:\\Users\\z8410\\Desktop\\RocketFreeMarkeAPI\\RocketFreeMarketAPI\\DataAccessLayer\\DataAccessLayer.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\shiin\\Desktop\\RocketFreeMarketAPI\\DataAccessLayer\\DataAccessLayer.csproj",
+        "projectUniqueName": "C:\\Users\\z8410\\Desktop\\RocketFreeMarkeAPI\\RocketFreeMarketAPI\\DataAccessLayer\\DataAccessLayer.csproj",
         "projectName": "DataAccessLayer",
-        "projectPath": "C:\\Users\\shiin\\Desktop\\RocketFreeMarketAPI\\DataAccessLayer\\DataAccessLayer.csproj",
-        "packagesPath": "C:\\Users\\shiin\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\shiin\\Desktop\\RocketFreeMarketAPI\\DataAccessLayer\\obj\\",
+        "projectPath": "C:\\Users\\z8410\\Desktop\\RocketFreeMarkeAPI\\RocketFreeMarketAPI\\DataAccessLayer\\DataAccessLayer.csproj",
+        "packagesPath": "C:\\Users\\z8410\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\z8410\\Desktop\\RocketFreeMarkeAPI\\RocketFreeMarketAPI\\DataAccessLayer\\obj\\",
         "projectStyle": "PackageReference",
+        "fallbackFolders": [
+          "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder"
+        ],
         "configFilePaths": [
-          "C:\\Users\\shiin\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\z8410\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
         "originalTargetFrameworks": [
@@ -27,8 +30,8 @@
         "frameworks": {
           "netcoreapp3.1": {
             "projectReferences": {
-              "C:\\Users\\shiin\\Desktop\\RocketFreeMarketAPI\\Entities\\Entities.csproj": {
-                "projectPath": "C:\\Users\\shiin\\Desktop\\RocketFreeMarketAPI\\Entities\\Entities.csproj"
+              "C:\\Users\\z8410\\Desktop\\RocketFreeMarkeAPI\\RocketFreeMarketAPI\\Entities\\Entities.csproj": {
+                "projectPath": "C:\\Users\\z8410\\Desktop\\RocketFreeMarkeAPI\\RocketFreeMarketAPI\\Entities\\Entities.csproj"
               }
             }
           }
@@ -42,6 +45,14 @@
       "frameworks": {
         "netcoreapp3.1": {
           "dependencies": {
+            "Microsoft.Extensions.Configuration.Abstractions": {
+              "target": "Package",
+              "version": "[3.1.6, )"
+            },
+            "System.Configuration.ConfigurationManager": {
+              "target": "Package",
+              "version": "[4.7.0, )"
+            },
             "System.Data.SqlClient": {
               "target": "Package",
               "version": "[4.8.1, )"
@@ -62,21 +73,24 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\3.1.302\\RuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\3.1.301\\RuntimeIdentifierGraph.json"
         }
       }
     },
-    "C:\\Users\\shiin\\Desktop\\RocketFreeMarketAPI\\Entities\\Entities.csproj": {
+    "C:\\Users\\z8410\\Desktop\\RocketFreeMarkeAPI\\RocketFreeMarketAPI\\Entities\\Entities.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\shiin\\Desktop\\RocketFreeMarketAPI\\Entities\\Entities.csproj",
+        "projectUniqueName": "C:\\Users\\z8410\\Desktop\\RocketFreeMarkeAPI\\RocketFreeMarketAPI\\Entities\\Entities.csproj",
         "projectName": "Entities",
-        "projectPath": "C:\\Users\\shiin\\Desktop\\RocketFreeMarketAPI\\Entities\\Entities.csproj",
-        "packagesPath": "C:\\Users\\shiin\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\shiin\\Desktop\\RocketFreeMarketAPI\\Entities\\obj\\",
+        "projectPath": "C:\\Users\\z8410\\Desktop\\RocketFreeMarkeAPI\\RocketFreeMarketAPI\\Entities\\Entities.csproj",
+        "packagesPath": "C:\\Users\\z8410\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\z8410\\Desktop\\RocketFreeMarkeAPI\\RocketFreeMarketAPI\\Entities\\obj\\",
         "projectStyle": "PackageReference",
+        "fallbackFolders": [
+          "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder"
+        ],
         "configFilePaths": [
-          "C:\\Users\\shiin\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\z8410\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
         "originalTargetFrameworks": [
@@ -114,7 +128,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\3.1.302\\RuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\3.1.301\\RuntimeIdentifierGraph.json"
         }
       }
     }

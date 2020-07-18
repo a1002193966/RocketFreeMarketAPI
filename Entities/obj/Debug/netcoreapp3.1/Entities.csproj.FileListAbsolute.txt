@@ -6,3 +6,13 @@ C:\Users\shiin\Desktop\RocketFreeMarketAPI\Entities\obj\Debug\netcoreapp3.1\Enti
 C:\Users\shiin\Desktop\RocketFreeMarketAPI\Entities\obj\Debug\netcoreapp3.1\Entities.csproj.CoreCompileInputs.cache
 C:\Users\shiin\Desktop\RocketFreeMarketAPI\Entities\obj\Debug\netcoreapp3.1\Entities.dll
 C:\Users\shiin\Desktop\RocketFreeMarketAPI\Entities\obj\Debug\netcoreapp3.1\Entities.pdb
+C:\Users\shiin\Desktop\RocketFreeMarketAPI\Entities\obj\Debug\netcoreapp3.1\Entities.csprojAssemblyReference.cache
+C:\Users\z8410\Desktop\RocketFreeMarkeAPI\RocketFreeMarketAPI\Entities\bin\Debug\netcoreapp3.1\Entities.deps.json
+C:\Users\z8410\Desktop\RocketFreeMarkeAPI\RocketFreeMarketAPI\Entities\bin\Debug\netcoreapp3.1\Entities.dll
+C:\Users\z8410\Desktop\RocketFreeMarkeAPI\RocketFreeMarketAPI\Entities\bin\Debug\netcoreapp3.1\Entities.pdb
+C:\Users\z8410\Desktop\RocketFreeMarkeAPI\RocketFreeMarketAPI\Entities\obj\Debug\netcoreapp3.1\Entities.csprojAssemblyReference.cache
+C:\Users\z8410\Desktop\RocketFreeMarkeAPI\RocketFreeMarketAPI\Entities\obj\Debug\netcoreapp3.1\Entities.AssemblyInfoInputs.cache
+C:\Users\z8410\Desktop\RocketFreeMarkeAPI\RocketFreeMarketAPI\Entities\obj\Debug\netcoreapp3.1\Entities.AssemblyInfo.cs
+C:\Users\z8410\Desktop\RocketFreeMarkeAPI\RocketFreeMarketAPI\Entities\obj\Debug\netcoreapp3.1\Entities.csproj.CoreCompileInputs.cache
+C:\Users\z8410\Desktop\RocketFreeMarkeAPI\RocketFreeMarketAPI\Entities\obj\Debug\netcoreapp3.1\Entities.dll
+C:\Users\z8410\Desktop\RocketFreeMarkeAPI\RocketFreeMarketAPI\Entities\obj\Debug\netcoreapp3.1\Entities.pdb
