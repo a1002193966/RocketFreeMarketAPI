@@ -12,7 +12,7 @@ namespace DataAccessLayer.DatabaseConnection
     {
         private readonly ICryptoProcess _cryptoProcess;
         private readonly IConfiguration _configuration;
-
+    
         public AccountConnection(ICryptoProcess cryptoProcess, IConfiguration configuration)
         {
             _cryptoProcess = cryptoProcess;
@@ -48,7 +48,8 @@ namespace DataAccessLayer.DatabaseConnection
 
                 //Creating Account
                 Account account = Account.CreateAccount(registerInput, secret);
-             
+
+
 
                 List<string> accountProperty = new List<string>()
                 {
