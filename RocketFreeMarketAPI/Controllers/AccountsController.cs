@@ -6,6 +6,7 @@ using Entities;
 using Microsoft.AspNetCore.Mvc;
 using DataAccessLayer.Infrastructure;
 using Microsoft.AspNetCore.Cors;
+using DTO;
 
 namespace RocketFreeMarketAPI.Controllers
 {

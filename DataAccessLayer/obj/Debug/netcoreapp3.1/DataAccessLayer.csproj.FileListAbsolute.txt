@@ -22,3 +22,5 @@ C:\Users\z8410\Desktop\RocketFreeMarkeAPI\RocketFreeMarketAPI\DataAccessLayer\ob
 C:\Users\z8410\Desktop\RocketFreeMarkeAPI\RocketFreeMarketAPI\DataAccessLayer\obj\Debug\netcoreapp3.1\DataAccessLayer.dll
 C:\Users\z8410\Desktop\RocketFreeMarkeAPI\RocketFreeMarketAPI\DataAccessLayer\obj\Debug\netcoreapp3.1\DataAccessLayer.pdb
 C:\Users\z8410\Desktop\RocketFreeMarkeAPI\RocketFreeMarketAPI\DataAccessLayer\obj\Debug\netcoreapp3.1\DataAccessLayer.csproj.CoreCompileInputs.cache
+C:\Users\shiin\Desktop\RocketFreeMarketAPI\DataAccessLayer\bin\Debug\netcoreapp3.1\DTO.dll
+C:\Users\shiin\Desktop\RocketFreeMarketAPI\DataAccessLayer\bin\Debug\netcoreapp3.1\DTO.pdb

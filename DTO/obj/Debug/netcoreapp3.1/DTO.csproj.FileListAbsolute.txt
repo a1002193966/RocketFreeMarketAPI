@@ -1,0 +1,9 @@
+C:\Users\shiin\Desktop\RocketFreeMarketAPI\DTO\bin\Debug\netcoreapp3.1\DTO.deps.json
+C:\Users\shiin\Desktop\RocketFreeMarketAPI\DTO\bin\Debug\netcoreapp3.1\DTO.dll
+C:\Users\shiin\Desktop\RocketFreeMarketAPI\DTO\bin\Debug\netcoreapp3.1\DTO.pdb
+C:\Users\shiin\Desktop\RocketFreeMarketAPI\DTO\obj\Debug\netcoreapp3.1\DTO.AssemblyInfoInputs.cache
+C:\Users\shiin\Desktop\RocketFreeMarketAPI\DTO\obj\Debug\netcoreapp3.1\DTO.AssemblyInfo.cs
+C:\Users\shiin\Desktop\RocketFreeMarketAPI\DTO\obj\Debug\netcoreapp3.1\DTO.csproj.CoreCompileInputs.cache
+C:\Users\shiin\Desktop\RocketFreeMarketAPI\DTO\obj\Debug\netcoreapp3.1\DTO.dll
+C:\Users\shiin\Desktop\RocketFreeMarketAPI\DTO\obj\Debug\netcoreapp3.1\DTO.pdb
+C:\Users\shiin\Desktop\RocketFreeMarketAPI\DTO\obj\Debug\netcoreapp3.1\DTO.csprojAssemblyReference.cache

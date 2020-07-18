@@ -1,30 +1,45 @@
 {
   "version": 3,
   "targets": {
-    ".NETCoreApp,Version=v3.1": {}
+    ".NETCoreApp,Version=v3.1": {
+      "DTO/1.0.0": {
+        "type": "project",
+        "framework": ".NETCoreApp,Version=v3.1",
+        "compile": {
+          "bin/placeholder/DTO.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/DTO.dll": {}
+        }
+      }
+    }
   },
-  "libraries": {},
+  "libraries": {
+    "DTO/1.0.0": {
+      "type": "project",
+      "path": "../DTO/DTO.csproj",
+      "msbuildProject": "../DTO/DTO.csproj"
+    }
+  },
   "projectFileDependencyGroups": {
-    ".NETCoreApp,Version=v3.1": []
+    ".NETCoreApp,Version=v3.1": [
+      "DTO >= 1.0.0"
+    ]
   },
   "packageFolders": {
-    "C:\\Users\\z8410\\.nuget\\packages\\": {},
-    "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder": {}
+    "C:\\Users\\shiin\\.nuget\\packages\\": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\z8410\\Desktop\\RocketFreeMarkeAPI\\RocketFreeMarketAPI\\Entities\\Entities.csproj",
+      "projectUniqueName": "C:\\Users\\shiin\\Desktop\\RocketFreeMarketAPI\\Entities\\Entities.csproj",
       "projectName": "Entities",
-      "projectPath": "C:\\Users\\z8410\\Desktop\\RocketFreeMarkeAPI\\RocketFreeMarketAPI\\Entities\\Entities.csproj",
-      "packagesPath": "C:\\Users\\z8410\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\z8410\\Desktop\\RocketFreeMarkeAPI\\RocketFreeMarketAPI\\Entities\\obj\\",
+      "projectPath": "C:\\Users\\shiin\\Desktop\\RocketFreeMarketAPI\\Entities\\Entities.csproj",
+      "packagesPath": "C:\\Users\\shiin\\.nuget\\packages\\",
+      "outputPath": "C:\\Users\\shiin\\Desktop\\RocketFreeMarketAPI\\Entities\\obj\\",
       "projectStyle": "PackageReference",
-      "fallbackFolders": [
-        "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder"
-      ],
       "configFilePaths": [
-        "C:\\Users\\z8410\\AppData\\Roaming\\NuGet\\NuGet.Config",
+        "C:\\Users\\shiin\\AppData\\Roaming\\NuGet\\NuGet.Config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
       ],
       "originalTargetFrameworks": [
@@ -36,7 +51,11 @@
       },
       "frameworks": {
         "netcoreapp3.1": {
-          "projectReferences": {}
+          "projectReferences": {
+            "C:\\Users\\shiin\\Desktop\\RocketFreeMarketAPI\\DTO\\DTO.csproj": {
+              "projectPath": "C:\\Users\\shiin\\Desktop\\RocketFreeMarketAPI\\DTO\\DTO.csproj"
+            }
+          }
         }
       },
       "warningProperties": {
@@ -62,7 +81,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\3.1.301\\RuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\3.1.302\\RuntimeIdentifierGraph.json"
       }
     }
   }

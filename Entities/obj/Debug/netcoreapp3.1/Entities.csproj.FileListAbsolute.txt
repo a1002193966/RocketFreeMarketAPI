@@ -16,3 +16,6 @@ C:\Users\z8410\Desktop\RocketFreeMarkeAPI\RocketFreeMarketAPI\Entities\obj\Debug
 C:\Users\z8410\Desktop\RocketFreeMarkeAPI\RocketFreeMarketAPI\Entities\obj\Debug\netcoreapp3.1\Entities.csproj.CoreCompileInputs.cache
 C:\Users\z8410\Desktop\RocketFreeMarkeAPI\RocketFreeMarketAPI\Entities\obj\Debug\netcoreapp3.1\Entities.dll
 C:\Users\z8410\Desktop\RocketFreeMarkeAPI\RocketFreeMarketAPI\Entities\obj\Debug\netcoreapp3.1\Entities.pdb
+C:\Users\shiin\Desktop\RocketFreeMarketAPI\Entities\bin\Debug\netcoreapp3.1\DTO.dll
+C:\Users\shiin\Desktop\RocketFreeMarketAPI\Entities\bin\Debug\netcoreapp3.1\DTO.pdb
+C:\Users\shiin\Desktop\RocketFreeMarketAPI\Entities\obj\Debug\netcoreapp3.1\Entities.csproj.CopyComplete

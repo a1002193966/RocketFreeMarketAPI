@@ -1,4 +1,5 @@
 ﻿using DataAccessLayer.Infrastructure;
+using DTO;
 using Entities;
 using Microsoft.Extensions.Configuration;
 using System;
@@ -22,8 +23,8 @@ namespace DataAccessLayer.DatabaseConnection
 
         private (SqlConnection, SqlConnection) EstablishDBConnection()
         {
-            string _defaultConnection = _configuration.GetSection("DBSettings").GetSection("DefaultConnection").Value;
-            string _accessConnection = _configuration.GetSection("DBSettings").GetSection("AccessConnection").Value;
+            string _defaultConnection = _configuration.GetConnectionString("DefaultConnection");
+            string _accessConnection = _configuration.GetConnectionString("AccessConnection");
 
             SqlConnection defaultConnection = new SqlConnection(_defaultConnection);
             SqlConnection accessConnection = new SqlConnection(_accessConnection);
@@ -46,33 +47,14 @@ namespace DataAccessLayer.DatabaseConnection
                 //Create Secrect Object
                 Secret secret = _cryptoProcess.Encrypt_Aes(registerInput.Password);
 
-                //Creating Account
-                Account account = Account.CreateAccount(registerInput, secret);
-             
-
-                List<string> accountProperty = new List<string>()
-                {
-                    "PhoneNumber",
-                    "Email",
-                    "PasswordHash",
-                    "AesIV",
-                    "AccountType"
-                };
-                List<string> accessProperty = new List<string>()
-                {
-                    "AccountID",
-                    "AesKey"
-                };
-                List<string> userProperty = new List<string>()
-                {
-                    "AccountID"
-                };
-
+                //Creating Account              
+                AccountDTO accountDTO = new AccountDTO(registerInput, secret);
+            
                 try
                 {
                     defaultConnection.Open();
                     defaultTransaction = defaultConnection.BeginTransaction();
-                    int accountInsertResult = insertData(defaultConnection, defaultTransaction, account, accountProperty, QueryConst.AccountInsertCMD);
+                    int accountInsertResult = insertData(defaultConnection, defaultTransaction, accountDTO, QueryConst.AccountInsertCMD);
                     if (accountInsertResult > 0)
                     {
                         int accountID = getAccountID(defaultConnection, defaultTransaction, registerInput.Email);
@@ -85,14 +67,14 @@ namespace DataAccessLayer.DatabaseConnection
                             };
                             accessConnection.Open();
                             accessTransaction = accessConnection.BeginTransaction();
-                            int accessInsertResult = insertData<Access>(accessConnection, accessTransaction, access, accessProperty, QueryConst.AccessInsertCMD);
+                            int accessInsertResult = insertData(accessConnection, accessTransaction, access, QueryConst.AccessInsertCMD);
                             if (accessInsertResult > 0)
                             {
-                                User user = new User()
+                                UserDTO userDTO = new UserDTO()
                                 {
                                     AccountID = accountID
                                 };
-                                int userInsertResult = insertData<User>(defaultConnection, defaultTransaction, user, userProperty, QueryConst.UserInsertCMD);
+                                int userInsertResult = insertData(defaultConnection, defaultTransaction, userDTO, QueryConst.UserInsertCMD);
                                 if (userInsertResult > 0)
                                 {
                                     accessTransaction.Commit();
@@ -216,16 +198,16 @@ namespace DataAccessLayer.DatabaseConnection
 
 
         #region Private Help Functions
-        private int insertData<T>(SqlConnection conn, SqlTransaction transaction, T model, List<String> property, String cmd)
+        private int insertData<T>(SqlConnection conn, SqlTransaction transaction, T model, String cmd)
         {
             int result = 0;
             SqlCommand sqlcmd = null;
             try
             {
                 sqlcmd = new SqlCommand(cmd, conn, transaction);
-                foreach (string x in property)
+                foreach (var x in model.GetType().GetProperties())
                 {
-                    sqlcmd.Parameters.AddWithValue("@" + x, model.GetType().GetProperty(x).GetValue(model, null));
+                    sqlcmd.Parameters.AddWithValue("@" + x.Name, x.GetValue(model, null));
                 }
                 result = sqlcmd.ExecuteNonQuery();
             }

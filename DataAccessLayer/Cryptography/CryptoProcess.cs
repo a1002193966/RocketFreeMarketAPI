@@ -1,5 +1,5 @@
 ﻿using DataAccessLayer.Infrastructure;
-using Entities;
+using DTO;
 using System;
 using System.IO;
 using System.Security.Cryptography;
