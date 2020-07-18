@@ -1,27 +1,33 @@
 ﻿using DataAccessLayer.Infrastructure;
 using Entities;
+using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
-using System.Text;
+
 
 namespace DataAccessLayer.DatabaseConnection
 {
     public class AccountConnection : IAccountConnection
     {
         private readonly ICryptoProcess _cryptoProcess;
-        private readonly string _defaultConnection = "Server=.\\SQLEXPRESS; Database=RocketFreeMarket; Trusted_Connection=True;";
-        private readonly string _accessConnection = "Server=.\\SQLEXPRESS; Database=AccountAccess; Trusted_Connection=True;";
-        public AccountConnection(ICryptoProcess cryptoProcess)
+        private readonly IConfiguration _configuration;
+
+        public AccountConnection(ICryptoProcess cryptoProcess, IConfiguration configuration)
         {
             _cryptoProcess = cryptoProcess;
+            _configuration = configuration;
         }
 
 
-        private (SqlConnection _DefaultConn, SqlConnection _AccessConn) EstablishDBConnection()
+        private (SqlConnection, SqlConnection) EstablishDBConnection()
         {
+            string _defaultConnection = _configuration.GetSection("DBSettings").GetSection("DefaultConnection").Value;
+            string _accessConnection = _configuration.GetSection("DBSettings").GetSection("AccessConnection").Value;
+
             SqlConnection defaultConnection = new SqlConnection(_defaultConnection);
             SqlConnection accessConnection = new SqlConnection(_accessConnection);
+
             return (defaultConnection, accessConnection);
         }
 
@@ -328,7 +334,9 @@ namespace DataAccessLayer.DatabaseConnection
 
         private bool isExist(string email)
         {
-            using (SqlConnection sqlconn = new SqlConnection(_defaultConnection))
+            //string _defaultConnection = _configuration.GetSection("DBSettings").GetSection("DefaultConnection").Value;
+            var (_defaultConnection, _) = EstablishDBConnection();
+            using (SqlConnection sqlconn = _defaultConnection)
             {
                 using (SqlCommand sqlcmd = new SqlCommand(QueryConst.GetAccountIDByEmailCMD, sqlconn))
                 {
