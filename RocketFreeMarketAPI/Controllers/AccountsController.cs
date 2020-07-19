@@ -2,51 +2,63 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Entities;
 using Microsoft.AspNetCore.Mvc;
+<<<<<<< HEAD
 
+=======
+using DataAccessLayer.Infrastructure;
+using Microsoft.AspNetCore.Cors;
+using DTO;
+>>>>>>> dev_fan
 
 namespace RocketFreeMarketAPI.Controllers
 {
     [Route("[controller]")]
     [ApiController]
+    [EnableCors("CorsPolicy")]
     public class AccountsController : ControllerBase
     {
-        private readonly IDBConnection _conn;
-        public AccountsController(IDBConnection conn)
+        private readonly IAccountConnection _conn;
+        public AccountsController(IAccountConnection conn)
         {
             _conn = conn;
         }
 
 
-
-        // GET: api/<AccountsController>
-        [HttpGet]
-        public async Task<List<Account>> Get()
+        // GetAccountInfo <AccountsController>/test@test.com
+        [HttpGet("{email}")]
+        public Account GetAccountInfo([FromRoute] string email)
         {
-            List<Account> AccountList = await _conn.ExcuteCommand("SELECT * FROM Account");
-            return AccountList;   
+            return _conn.GetAccountInfo(email);
         }
 
-        // GET api/<AccountsController>/5
-        [HttpGet("{id}")]
-        public string Get(int id)
+        //Login <AccountsController>/login
+        [HttpPost("login")]
+        public bool Login([FromBody] LoginInput loginInput)
         {
-            return "value";
+            return _conn.Login(loginInput);
         }
 
-        // POST api/<AccountsController>
-        [HttpPost]
-        public void Post([FromBody] string value)
+        // Register <AccountsController>/register
+        [HttpPost("register")]
+        public bool Register([FromBody] RegisterInput registerInput)
         {
+            return _conn.Register(registerInput);
         }
 
-        // PUT api/<AccountsController>/5
+        
+
+
+
+
+        // PUT <AccountsController>/5
         [HttpPut("{id}")]
         public void Put(int id, [FromBody] string value)
         {
         }
 
-        // DELETE api/<AccountsController>/5
+        // DELETE <AccountsController>/5
         [HttpDelete("{id}")]
         public void Delete(int id)
         {

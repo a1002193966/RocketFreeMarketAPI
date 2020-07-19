@@ -10,8 +10,10 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using RocketFreeMarketAPI.DatabaseConnection;
-using RocketFreeMarketAPI.Infrastracture;
+using DataAccessLayer.Infrastructure;
+using DataAccessLayer.DatabaseConnection;
+using DataAccessLayer.Cryptography;
+
 
 namespace RocketFreeMarketAPI
 {
@@ -29,11 +31,14 @@ namespace RocketFreeMarketAPI
         {
             services.AddCors(options => options.AddPolicy(name: "CorsPolicy", 
                                                             builder => {
-                                                                builder.AllowAnyOrigin();
+                                                                builder.AllowAnyOrigin()
+                                                                       .AllowAnyHeader()
+                                                                       .AllowAnyMethod();
                                                             }
                                                             ));
             services.AddControllers();
-            services.AddSingleton<IDBConnection, DBConnection>();
+            services.AddSingleton<IAccountConnection, AccountConnection>();
+            services.AddTransient<ICryptoProcess, CryptoProcess>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
