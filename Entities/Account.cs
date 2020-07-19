@@ -1,4 +1,5 @@
-﻿using System;
+﻿using DTO;
+using System;
 
 using System.Collections.ObjectModel;
 namespace Entities
@@ -16,39 +17,7 @@ namespace Entities
         public DateTime LastLoginDate { get; set; }
         public int Status { get; set; }
         public string AccountType { get; set; }
-
-        public static Account CreateAccount(RegisterInput registerInput, Secret secret)
-        {
-            Account account = new Account()
-            {
-                Email = registerInput.Email,
-                PasswordHash = secret.Cipher,
-                PhoneNumber = registerInput.PhoneNumber,
-                AesIV = secret.IV,
-                AccountType = "Customer"
-            };
-
-            return account;
-        }
-
         
     }
-
-    public class RegisterInput
-    {
-        public string Email { get; set; }
-        public string Password { get; set; }
-        public string PhoneNumber { get; set; }
-
-
-    }
-
-    public class LoginInput
-    {
-        public string Email { get; set; }
-        public string Password { get; set; }
-    }
-
-
 
 }

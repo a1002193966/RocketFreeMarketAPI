@@ -1,5 +1,5 @@
-﻿using Entities;
-
+﻿using DTO;
+using Entities;
 
 namespace DataAccessLayer.Infrastructure
 {

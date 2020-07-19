@@ -1,7 +1,7 @@
 ﻿using System;
 
 
-namespace Entities
+namespace DTO
 {
     public class Secret
     {
