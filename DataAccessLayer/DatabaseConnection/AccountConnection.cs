@@ -1,11 +1,12 @@
 ﻿using DataAccessLayer.Infrastructure;
 using DTO;
 using Entities;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
-
+using System.Web.Providers.Entities;
 
 namespace DataAccessLayer.DatabaseConnection
 {
@@ -40,6 +41,8 @@ namespace DataAccessLayer.DatabaseConnection
          * If not exist, create new account,encrypt password and save to database, then return true
          * if exist, return false
          */
+
+
         public bool Register(RegisterInput registerInput)
         {
             //check if email is already existed.

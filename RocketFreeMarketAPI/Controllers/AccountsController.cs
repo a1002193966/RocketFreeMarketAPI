@@ -7,6 +7,8 @@ using Microsoft.AspNetCore.Mvc;
 using DataAccessLayer.Infrastructure;
 using Microsoft.AspNetCore.Cors;
 using DTO;
+using Microsoft.AspNetCore.Identity;
+
 
 namespace RocketFreeMarketAPI.Controllers
 {
@@ -43,7 +45,11 @@ namespace RocketFreeMarketAPI.Controllers
             return _conn.Register(registerInput);
         }
 
-        
+        [HttpGet("confirm")]
+        public bool Confirm(RegisterInput registerInput)
+        {
+            var token = UserManager<RegisterInput>.GenerateEmailConfirmationTokenAsync(registerInput);
+        }
 
 
 
