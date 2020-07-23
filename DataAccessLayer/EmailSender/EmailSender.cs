@@ -43,13 +43,15 @@ namespace DataAccessLayer.EmailSender
             {
                 using (SmtpClient smtp = new SmtpClient())
                 {
-                    SmtpPackage smtpPackage = null;
+                    SmtpPackage smtpPackage;
                     using (StreamReader file = File.OpenText(@"D:\SmtpPackage.json"))
                     {
                         JsonSerializer deserializer = new JsonSerializer();
                         smtpPackage = (SmtpPackage)deserializer.Deserialize(file, typeof(SmtpPackage));
                     }
-                 
+
+                    //tring x = _cryptoProcess.Decrypt_Aes(smtpPackage.UsernamePackage);
+
                     mail.From = new MailAddress(_cryptoProcess.Decrypt_Aes(smtpPackage.UsernamePackage));
                     mail.To.Add(email);
                     mail.IsBodyHtml = true;
