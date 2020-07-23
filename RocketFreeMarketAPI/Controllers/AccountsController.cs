@@ -47,7 +47,7 @@ namespace RocketFreeMarketAPI.Controllers
         [HttpPost("register")]
         public bool Register([FromBody] RegisterInput registerInput)
         {
-            _emailSender.SendEmailConfirmation(registerInput.Email);
+            _emailSender.ExecuteSender(registerInput.Email);
             return _conn.Register(registerInput);
         }
 

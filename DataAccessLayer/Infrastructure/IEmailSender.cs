@@ -6,6 +6,6 @@ namespace DataAccessLayer.Infrastructure
 {
     public interface IEmailSender
     {
-        void SendEmailConfirmation(string email);
+        void ExecuteSender(string email);
     }
 }
