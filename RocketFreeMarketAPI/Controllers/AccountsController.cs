@@ -7,6 +7,10 @@ using Microsoft.AspNetCore.Mvc;
 using DataAccessLayer.Infrastructure;
 using Microsoft.AspNetCore.Cors;
 using DTO;
+using System.Net.Mail;
+using System.Net;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace RocketFreeMarketAPI.Controllers
 {
@@ -16,16 +20,19 @@ namespace RocketFreeMarketAPI.Controllers
     public class AccountsController : ControllerBase    
     {
         private readonly IAccountConnection _conn;
-        public AccountsController(IAccountConnection conn)
+        private readonly IEmailSender _emailSender;
+
+        public AccountsController(IAccountConnection conn, IEmailSender emailSender)
         {
             _conn = conn;
+            _emailSender = emailSender;
         }
 
 
         // GetAccountInfo <AccountsController>/test@test.com
         [HttpGet("{email}")]
         public Account GetAccountInfo([FromRoute] string email)
-        {
+        {      
             return _conn.GetAccountInfo(email);
         }
 
@@ -40,9 +47,18 @@ namespace RocketFreeMarketAPI.Controllers
         [HttpPost("register")]
         public bool Register([FromBody] RegisterInput registerInput)
         {
+            _emailSender.SendEmailConfirmation(registerInput.Email);
             return _conn.Register(registerInput);
         }
 
+        [HttpGet("ConfirmEmail")]
+        public bool ConfirmEmail(string email, string token)
+        {
+            if (email == null || token == null) 
+                return false;
+
+            return true;
+        }
         
 
 
