@@ -1,8 +1,11 @@
 ﻿using DataAccessLayer.Infrastructure;
+using DTO;
 using Microsoft.Extensions.Configuration;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
+using System.IO;
 using System.Net;
 using System.Net.Mail;
 using System.Security.Cryptography;
@@ -12,93 +15,90 @@ namespace DataAccessLayer.EmailSender
 {
     public class EmailSender : IEmailSender
     {
-        private readonly IConfiguration _configuration;
+        private readonly ICryptoProcess _cryptoProcess;
         private readonly string _connectionString;
-        public EmailSender(IConfiguration configuration)
+        public EmailSender(IConfiguration configuration, ICryptoProcess cryptoProcess)
         {
-            _configuration = configuration.GetSection("SMTP");
+            _cryptoProcess = cryptoProcess;
             _connectionString = configuration.GetConnectionString("AccessConnection");
         }
 
-        public void SendEmailConfirmation(string email)
+        public void ExecuteSender(string email)
         {
-            MailMessage mail = new MailMessage();
-            SmtpClient smtp = new SmtpClient();
-            SqlConnection sqlcon = null;
-            SqlCommand sqlcmd = null;
-
-            try
+            try 
             {
-
-
-                string token;
-                using (var algorithm = SHA512.Create())
-                {
-                    var hashedBytes = algorithm.ComputeHash(Encoding.UTF8.GetBytes(email + DateTime.Now.ToString()));
-                    token = BitConverter.ToString(hashedBytes).Replace("-", "");
-                }
-
-                //SAVE TOKEN TO DATABASE
-                
-               
-                sqlcon = new SqlConnection(_connectionString);
-                string cmd = "INSERT INTO [ConfirmationToken](Email, Token, TokenType) VALUES(@Email, @Token, @TokenType)";
-                sqlcmd = new SqlCommand(cmd, sqlcon);
-                sqlcmd.Parameters.AddWithValue("@Email", email);
-                sqlcmd.Parameters.AddWithValue("@Token", token);
-                sqlcmd.Parameters.AddWithValue("@TokenType", "Email");
-                sqlcon.Open();
-                sqlcmd.ExecuteNonQuery();
-                
-
-
-
-
-
-                //SEND CONFIRMATION EMAIL
-           
-         
-                mail.From = new MailAddress(_configuration["Username"]);
-                mail.To.Add(email);
-                mail.IsBodyHtml = true;
-                mail.Subject = "Rocket Free Market Email Confirmation";
-                string confirmationLink = "https://localhost:44300/accounts/ConfirmEmail?email=" + email + "&token=" + token;
-                string emailBody = "<!DOCTYPE html>" +
-                                   "<html>" +
-                                   "<head>" +
-                                       "<meta charset='utf-8'>" +
-                                       "<title>Email Confirmation</title>" +
-                                   "</head>" +
-                                   "<body>" +
-                                       "<h2 style='text-align: center;'>Email Confirmation</h2>" +
-                                       "<p style='text-align: center;'>Please click the following link to complete the confirmation process: <br>" +
-                                       "<a href='" + confirmationLink + "'>CLICK HERE !</a> <br>" +
-                                       "This link will expire in 15 minutes." +
-                                       "</p>" +
-                                   "</body>" +
-                                   "</html>";
-                mail.Body = emailBody;
-
-                smtp.Host = _configuration["Host"];
-                smtp.Port = Convert.ToInt32(_configuration["Port"]);
-                smtp.Credentials = new NetworkCredential(_configuration["Username"], _configuration["Password"]);
-                smtp.EnableSsl = true;
-                smtp.Send(mail);
-          
-
-
+                string token = generateToken(email);
+                saveToken(email, token);
+                sendEmailConfirmation(email, token);
             }
             catch(Exception e)
             {
                 throw;
-            }
-            finally
+            }           
+        }
+
+        private void sendEmailConfirmation(string email, string token)
+        {      
+            using (MailMessage mail = new MailMessage())
             {
-                sqlcmd.Dispose();
-                sqlcon.Close();
-                mail.Dispose();
-                smtp.Dispose();
+                using (SmtpClient smtp = new SmtpClient())
+                {
+                    SmtpPackage smtpPackage;
+                    using (StreamReader file = File.OpenText(@"D:\SmtpPackage.json"))
+                    {
+                        JsonSerializer deserializer = new JsonSerializer();
+                        smtpPackage = (SmtpPackage)deserializer.Deserialize(file, typeof(SmtpPackage));
+                    }
+
+                    mail.From = new MailAddress(_cryptoProcess.Decrypt_Aes(smtpPackage.UsernamePackage));
+                    mail.To.Add(email);
+                    mail.IsBodyHtml = true;
+                    mail.Subject = "Rocket Free Market Email Confirmation";
+                    mail.Body = string.Format(smtpPackage.EmailBody, string.Format(smtpPackage.ConfirmationLink, email, token));
+
+                    smtp.Host = smtpPackage.Host;
+                    smtp.Port = smtpPackage.Port;
+                    smtp.Credentials = new NetworkCredential(_cryptoProcess.Decrypt_Aes(smtpPackage.UsernamePackage), _cryptoProcess.Decrypt_Aes(smtpPackage.PasswordPackage));
+                    smtp.EnableSsl = true;
+                    smtp.Send(mail);
+                }
+            }                  
+        }
+
+        private void saveToken(string email, string token)
+        {
+            using (SqlConnection sqlcon = new SqlConnection(_connectionString))
+            {
+                sqlcon.Open();
+                string cmd = "INSERT INTO [ConfirmationToken](Email, Token, TokenType) VALUES(@Email, @Token, @TokenType)";
+                using (SqlCommand sqlcmd = new SqlCommand(cmd, sqlcon))
+                {
+                    sqlcmd.Parameters.AddWithValue("@Email", email);
+                    sqlcmd.Parameters.AddWithValue("@Token", token);
+                    sqlcmd.Parameters.AddWithValue("@TokenType", "Email");
+                    sqlcmd.ExecuteNonQuery();
+                }
             }
         }
+
+        private string generateToken(string email)
+        {
+            string token = null;
+            using (SHA512 algorithm = SHA512.Create())
+            {
+                byte[] hashedBytes = algorithm.ComputeHash(Encoding.UTF32.GetBytes(email + DateTime.Now.ToString()));
+                token = BitConverter.ToString(hashedBytes).Replace("-", "");
+            }
+            return token;
+        }
+
     }
-}
+}   
+            
+           
+  
+       
+            
+        
+    
+
