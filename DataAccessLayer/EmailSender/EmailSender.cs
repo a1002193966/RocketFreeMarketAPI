@@ -50,8 +50,6 @@ namespace DataAccessLayer.EmailSender
                         smtpPackage = (SmtpPackage)deserializer.Deserialize(file, typeof(SmtpPackage));
                     }
 
-                    //tring x = _cryptoProcess.Decrypt_Aes(smtpPackage.UsernamePackage);
-
                     mail.From = new MailAddress(_cryptoProcess.Decrypt_Aes(smtpPackage.UsernamePackage));
                     mail.To.Add(email);
                     mail.IsBodyHtml = true;

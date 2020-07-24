@@ -20,18 +20,6 @@ namespace DataAccessLayer.DatabaseConnection
             _configuration = configuration;
         }
 
-
-        private (SqlConnection, SqlConnection) EstablishDBConnection()
-        {
-            string _defaultConnection = _configuration.GetConnectionString("DefaultConnection");
-            string _accessConnection = _configuration.GetConnectionString("AccessConnection");
-
-            SqlConnection defaultConnection = new SqlConnection(_defaultConnection);
-            SqlConnection accessConnection = new SqlConnection(_accessConnection);
-
-            return (defaultConnection, accessConnection);
-        }
-
         /*
          * Register new user
          * 
@@ -51,7 +39,7 @@ namespace DataAccessLayer.DatabaseConnection
                 SqlTransaction accessTransaction = null;
 
                 //Establish DBConnection
-                var (defaultConnection, accessConnection) = EstablishDBConnection();
+                var (defaultConnection, accessConnection) = establishDBConnection();
 
                 //Create Secrect Object
                 Secret secret = _cryptoProcess.Encrypt_Aes(registerInput.Password);
@@ -174,7 +162,7 @@ namespace DataAccessLayer.DatabaseConnection
             }
 
             //Establish DBConnection
-            var (defaultConnection, accessConnection) = EstablishDBConnection();
+            var (defaultConnection, accessConnection) = establishDBConnection();
 
             SqlCommand defaultcmd = new SqlCommand(QueryConst.GetAccountInfoByEmailCMD, defaultConnection);
             SqlCommand accesscmd = new SqlCommand(QueryConst.GetAccountKeyCMD, accessConnection);
@@ -307,7 +295,7 @@ namespace DataAccessLayer.DatabaseConnection
             }
 
             //Establish DBConnection
-            var (defaultConnection, accessConnection) = EstablishDBConnection();
+            var (defaultConnection, accessConnection) = establishDBConnection();
 
             SqlCommand defaultcmd = new SqlCommand(QueryConst.GetAccountHashCMD, defaultConnection);
             SqlCommand accesscmd = new SqlCommand(QueryConst.GetAccountKeyCMD, accessConnection);
@@ -380,7 +368,7 @@ namespace DataAccessLayer.DatabaseConnection
         private bool isExist(string email)
         {
             //string _defaultConnection = _configuration.GetSection("DBSettings").GetSection("DefaultConnection").Value;
-            var (_defaultConnection, _) = EstablishDBConnection();
+            var (_defaultConnection, _) = establishDBConnection();
             using (SqlConnection sqlconn = _defaultConnection)
             {
                 using (SqlCommand sqlcmd = new SqlCommand(QueryConst.GetAccountIDByEmailCMD, sqlconn))
@@ -404,6 +392,17 @@ namespace DataAccessLayer.DatabaseConnection
                     }
                 }
             }
+        }
+
+        private (SqlConnection, SqlConnection) establishDBConnection()
+        {
+            string _defaultConnection = _configuration.GetConnectionString("DefaultConnection");
+            string _accessConnection = _configuration.GetConnectionString("AccessConnection");
+
+            SqlConnection defaultConnection = new SqlConnection(_defaultConnection);
+            SqlConnection accessConnection = new SqlConnection(_accessConnection);
+
+            return (defaultConnection, accessConnection);
         }
         #endregion
 
