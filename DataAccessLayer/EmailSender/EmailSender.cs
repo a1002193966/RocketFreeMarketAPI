@@ -50,11 +50,14 @@ namespace DataAccessLayer.EmailSender
                         smtpPackage = (SmtpPackage)deserializer.Deserialize(file, typeof(SmtpPackage));
                     }
 
+                    byte[] emailHash = Encoding.ASCII.GetBytes(email);
+                    string emailSerial = JsonConvert.SerializeObject(emailHash);
+
                     mail.From = new MailAddress(_cryptoProcess.Decrypt_Aes(smtpPackage.UsernamePackage));
                     mail.To.Add(email);
                     mail.IsBodyHtml = true;
                     mail.Subject = "Rocket Free Market Email Confirmation";
-                    mail.Body = string.Format(smtpPackage.EmailBody, string.Format(smtpPackage.ConfirmationLink, email, token));
+                    mail.Body = string.Format(smtpPackage.EmailBody, string.Format(smtpPackage.ConfirmationLink, emailSerial, token));
 
                     smtp.Host = smtpPackage.Host;
                     smtp.Port = smtpPackage.Port;
@@ -93,12 +96,4 @@ namespace DataAccessLayer.EmailSender
         }
 
     }
-}   
-            
-           
-  
-       
-            
-        
-    
-
+}          

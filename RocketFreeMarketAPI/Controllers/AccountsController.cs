@@ -7,10 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using DataAccessLayer.Infrastructure;
 using Microsoft.AspNetCore.Cors;
 using DTO;
-using System.Net.Mail;
-using System.Net;
-using System.Security.Cryptography;
-using System.Text;
+
 
 namespace RocketFreeMarketAPI.Controllers
 {
@@ -63,9 +60,10 @@ namespace RocketFreeMarketAPI.Controllers
         }
 
         [HttpGet("ConfirmEmail")]
-        public bool ConfirmEmail(string email, string token)
+        public bool ConfirmEmail(string e, string t)
         {
-            if (email == null || token == null) 
+            // e == email, t == token
+            if (e == null || t == null) 
                 return false;
 
             return true;
