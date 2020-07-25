@@ -1,13 +1,12 @@
 ﻿using DataAccessLayer.Infrastructure;
 using DTO;
 using Entities;
-using Microsoft.AspNetCore.Identity;
+
 using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
-using System.Web.Providers.Entities;
 using System.Text;
 
 
@@ -60,71 +59,57 @@ namespace DataAccessLayer.DatabaseConnection
                     //set up transaction
                     defaultTransaction = defaultConnection.BeginTransaction();
                     //insert Account to database  
-                    int accountInsertResult = insertData(defaultConnection, defaultTransaction, accountDTO, QueryConst.AccountInsertCMD);                 
-                    
+                    int accountInsertResult = insertData(defaultConnection, defaultTransaction, accountDTO, QueryConst.AccountInsertCMD);
+
+                    //if inserted, get the AccountID
+                    int accountID = getAccountID(defaultConnection, defaultTransaction, registerInput.Email);
                     //check if data inserted to database
 
-                    if (accountInsertResult > 0)
+                    if (accountInsertResult > 0 && accountID != 0)
                     {
-                        //if inserted, get the AccountID
-                        int accountID = getAccountID(defaultConnection, defaultTransaction, registerInput.Email);
-                        if (accountID != 0)
+                        //Create Access account clas and save the encryption key
+                        Access access = new Access()
                         {
-                            //Create Access account clas and save the encryption key
-                            Access access = new Access()
-                            {
-                                AccountID = accountID,
-                                AesKey = secret.Key
-                            };
+                            AccountID = accountID,
+                            AesKey = secret.Key
+                        };
 
-                            //Open Access db connection
-                            accessConnection.Open();
-                            accessTransaction = accessConnection.BeginTransaction();
-                            int accessInsertResult = insertData(accessConnection, accessTransaction, access, QueryConst.AccessInsertCMD);
-                            if (accessInsertResult > 0)
-                            {
-                                UserDTO userDTO = new UserDTO()
-                                {
-                                    AccountID = accountID
-                                };
-                                int userInsertResult = insertData(defaultConnection, defaultTransaction, userDTO, QueryConst.UserInsertCMD);
+                        //Open Access db connection
+                        accessConnection.Open();
+                        accessTransaction = accessConnection.BeginTransaction();
+                        UserDTO userDTO = new UserDTO()
+                        {
+                            AccountID = accountID
+                        };
+                        int accessInsertResult = insertData(accessConnection, accessTransaction, access, QueryConst.AccessInsertCMD);
 
-                                if (userInsertResult > 0)
-                                {
-                                    //If no error, commit transaction
-                                    accessTransaction.Commit();
-                                    defaultTransaction.Commit();
-                                    return true;
-                                }
-                                else
-                                {
-                                    //if User not inserted, rollback 
-                                    accessTransaction.Rollback();
-                                    defaultTransaction.Rollback();
-                                    return false;
-                                }
-                            }
-                            else
-                            {
-                                //if Access not inserted, rollback
-                                accessTransaction.Rollback();
-                                defaultTransaction.Rollback();
-                                return false;
-                            } // end of if (accessInsertResult > 0)
+
+                        int userInsertResult = insertData(defaultConnection, defaultTransaction, userDTO, QueryConst.UserInsertCMD);
+
+                        if (accessInsertResult > 0 && userInsertResult > 0)
+                        {
+                            //If no error, commit transaction
+                            accessTransaction.Commit();
+                            defaultTransaction.Commit();
+                            return true;
                         }
                         else
                         {
-                            //if AccountID not get, rollback
+                            //if User not inserted, rollback 
+                            accessTransaction.Rollback();
                             defaultTransaction.Rollback();
                             return false;
-                        }// end of if (accountID != 0)
+                        }
                     }
                     else
                     {
-                        //if Account not inserted, rollback
+                        //if User not inserted, rollback 
+                        accessTransaction.Rollback();
                         defaultTransaction.Rollback();
                         return false;
-                    }// end of if (accountInsertResult > 0)
+                    }
+
+
                 }
                 catch (Exception e)
                 {
