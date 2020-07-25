@@ -20,7 +20,7 @@ namespace DataAccessLayer.EmailSender
         public EmailSender(IConfiguration configuration, ICryptoProcess cryptoProcess)
         {
             _cryptoProcess = cryptoProcess;
-            _connectionString = configuration.GetConnectionString("AccessConnection");
+            _connectionString = _cryptoProcess.DecodeHash(configuration.GetConnectionString("AccessConnection"));
         }
 
         public void ExecuteSender(string email)
@@ -49,15 +49,12 @@ namespace DataAccessLayer.EmailSender
                         JsonSerializer deserializer = new JsonSerializer();
                         smtpPackage = (SmtpPackage)deserializer.Deserialize(file, typeof(SmtpPackage));
                     }
-
-                    byte[] emailHash = Encoding.ASCII.GetBytes(email);
-                    string emailSerial = JsonConvert.SerializeObject(emailHash);
-
+                           
                     mail.From = new MailAddress(_cryptoProcess.Decrypt_Aes(smtpPackage.UsernamePackage));
                     mail.To.Add(email);
                     mail.IsBodyHtml = true;
                     mail.Subject = "Rocket Free Market Email Confirmation";
-                    mail.Body = string.Format(smtpPackage.EmailBody, string.Format(smtpPackage.ConfirmationLink, emailSerial, token));
+                    mail.Body = string.Format(smtpPackage.EmailBody, string.Format(smtpPackage.ConfirmationLink, _cryptoProcess.EncodeText(email), token));
 
                     smtp.Host = smtpPackage.Host;
                     smtp.Port = smtpPackage.Port;

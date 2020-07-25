@@ -1,9 +1,10 @@
 ﻿using DataAccessLayer.Infrastructure;
 using DTO;
+using Newtonsoft.Json;
 using System;
 using System.IO;
 using System.Security.Cryptography;
-
+using System.Text;
 
 namespace DataAccessLayer.Cryptography
 {
@@ -78,6 +79,20 @@ namespace DataAccessLayer.Cryptography
                 }
             }
             return password;
+        }
+
+        public string DecodeHash(string hash)
+        {
+            dynamic dehash = JsonConvert.DeserializeObject<byte[]>(hash);
+            string text = Encoding.ASCII.GetString(dehash);
+            return text;
+        }
+
+        public string EncodeText(string text)
+        {
+            byte[] byteString = Encoding.ASCII.GetBytes(text);
+            string hash = JsonConvert.SerializeObject(byteString);
+            return hash;
         }
     }
 }
