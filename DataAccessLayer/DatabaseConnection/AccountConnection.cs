@@ -56,50 +56,45 @@ namespace DataAccessLayer.DatabaseConnection
                 {
                     //open db connection
                     defaultConnection.Open();
-                    //set up transaction
+
+                    //Open Access db connection
+                    accessConnection.Open();
+
+                    //set up default transaction
                     defaultTransaction = defaultConnection.BeginTransaction();
+
+                    //set up Access transaction
+                    accessTransaction = accessConnection.BeginTransaction();
+
                     //insert Account to database  
                     int accountInsertResult = insertData(defaultConnection, defaultTransaction, accountDTO, QueryConst.AccountInsertCMD);
 
                     //if inserted, get the AccountID
                     int accountID = getAccountID(defaultConnection, defaultTransaction, registerInput.Email);
-                    //check if data inserted to database
 
-                    if (accountInsertResult > 0 && accountID != 0)
+                    UserDTO userDTO = new UserDTO()
                     {
-                        //Create Access account clas and save the encryption key
-                        Access access = new Access()
-                        {
-                            AccountID = accountID,
-                            AesKey = secret.Key
-                        };
+                        AccountID = accountID
+                    };
 
-                        //Open Access db connection
-                        accessConnection.Open();
-                        accessTransaction = accessConnection.BeginTransaction();
-                        UserDTO userDTO = new UserDTO()
-                        {
-                            AccountID = accountID
-                        };
-                        int accessInsertResult = insertData(accessConnection, accessTransaction, access, QueryConst.AccessInsertCMD);
+                    //Create Access account clas and save the encryption key
+                    Access access = new Access()
+                    {
+                        AccountID = accountID,
+                        AesKey = secret.Key
+                    };
 
+                    //insert Access Key to database  
+                    int accessInsertResult = insertData(accessConnection, accessTransaction, access, QueryConst.AccessInsertCMD);
 
-                        int userInsertResult = insertData(defaultConnection, defaultTransaction, userDTO, QueryConst.UserInsertCMD);
-
-                        if (accessInsertResult > 0 && userInsertResult > 0)
-                        {
-                            //If no error, commit transaction
+                    //insert User to database
+                    int userInsertResult = insertData(defaultConnection, defaultTransaction, userDTO, QueryConst.UserInsertCMD);
+          
+                    if (accountID != 0 && accountInsertResult > 0  && accessInsertResult > 0 && userInsertResult > 0)
+                    {
                             accessTransaction.Commit();
                             defaultTransaction.Commit();
                             return true;
-                        }
-                        else
-                        {
-                            //if User not inserted, rollback 
-                            accessTransaction.Rollback();
-                            defaultTransaction.Rollback();
-                            return false;
-                        }
                     }
                     else
                     {
@@ -108,7 +103,6 @@ namespace DataAccessLayer.DatabaseConnection
                         defaultTransaction.Rollback();
                         return false;
                     }
-
 
                 }
                 catch (Exception e)
