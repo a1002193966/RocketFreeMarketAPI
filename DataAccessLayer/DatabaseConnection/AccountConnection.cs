@@ -3,10 +3,13 @@ using DTO;
 using Entities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Web.Providers.Entities;
+using System.Text;
+
 
 namespace DataAccessLayer.DatabaseConnection
 {
@@ -395,6 +398,13 @@ namespace DataAccessLayer.DatabaseConnection
                     }
                 }
             }
+        }
+
+        private string decodeEmail(string emailHash)
+        {
+            dynamic dehash = JsonConvert.DeserializeObject<byte[]>(emailHash);
+            string email = Encoding.ASCII.GetString(dehash);
+            return email;
         }
 
         private (SqlConnection, SqlConnection) establishDBConnection()

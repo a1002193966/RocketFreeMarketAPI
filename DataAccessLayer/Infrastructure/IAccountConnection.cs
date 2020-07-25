@@ -7,6 +7,6 @@ namespace DataAccessLayer.Infrastructure
     {     
         bool Register(RegisterInput registerInput);
         bool Login(LoginInput loginInput);
-        Account GetAccountInfo(string email);     
+        Account GetAccountInfo(string email);
     }
 }
