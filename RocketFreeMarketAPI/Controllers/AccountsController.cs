@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using DataAccessLayer.Infrastructure;
 using Microsoft.AspNetCore.Cors;
 using DTO;
-
+using Microsoft.Extensions.Configuration;
 
 namespace RocketFreeMarketAPI.Controllers
 {
@@ -18,11 +18,15 @@ namespace RocketFreeMarketAPI.Controllers
     {
         private readonly IAccountConnection _conn;
         private readonly IEmailSender _emailSender;
+        private readonly ICryptoProcess _cryptoProcess;
+        private readonly IConfiguration _configuration;
 
-        public AccountsController(IAccountConnection conn, IEmailSender emailSender)
+        public AccountsController(IAccountConnection conn, IEmailSender emailSender, ICryptoProcess cryptoProcess, IConfiguration configuration)
         {
             _conn = conn;
             _emailSender = emailSender;
+            _cryptoProcess = cryptoProcess;
+            _configuration = configuration;
         }
 
 
@@ -69,6 +73,8 @@ namespace RocketFreeMarketAPI.Controllers
             return true;
         }
         
+
+
 
 
 

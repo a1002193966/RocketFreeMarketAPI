@@ -395,17 +395,10 @@ namespace DataAccessLayer.DatabaseConnection
             }
         }
 
-        private string decodeEmail(string emailHash)
-        {
-            dynamic dehash = JsonConvert.DeserializeObject<byte[]>(emailHash);
-            string email = Encoding.ASCII.GetString(dehash);
-            return email;
-        }
-
         private (SqlConnection, SqlConnection) establishDBConnection()
         {
-            string _defaultConnection = _configuration.GetConnectionString("DefaultConnection");
-            string _accessConnection = _configuration.GetConnectionString("AccessConnection");
+            string _defaultConnection = _cryptoProcess.DecodeHash(_configuration.GetConnectionString("DefaultConnection"));
+            string _accessConnection = _cryptoProcess.DecodeHash(_configuration.GetConnectionString("AccessConnection"));
 
             SqlConnection defaultConnection = new SqlConnection(_defaultConnection);
             SqlConnection accessConnection = new SqlConnection(_accessConnection);
