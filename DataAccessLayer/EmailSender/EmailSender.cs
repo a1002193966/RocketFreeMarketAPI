@@ -20,7 +20,7 @@ namespace DataAccessLayer.EmailSender
         public EmailSender(IConfiguration configuration, ICryptoProcess cryptoProcess)
         {
             _cryptoProcess = cryptoProcess;
-            _connectionString = _cryptoProcess.DecodeHash(configuration.GetConnectionString("AccessConnection"));
+            _connectionString = _cryptoProcess.DecodeHash(configuration.GetConnectionString("DefaultConnection"));
         }
 
         public void ExecuteSender(string email)
@@ -44,7 +44,7 @@ namespace DataAccessLayer.EmailSender
                 using (SmtpClient smtp = new SmtpClient())
                 {
                     SmtpPackage smtpPackage;
-                    using (StreamReader file = File.OpenText(@"C:\Users\z8410\Desktop\test1\SmtpPackage.json"))
+                    using (StreamReader file = File.OpenText(@"D:\SmtpPackage.json"))
                     {
                         JsonSerializer deserializer = new JsonSerializer();
                         smtpPackage = (SmtpPackage)deserializer.Deserialize(file, typeof(SmtpPackage));
