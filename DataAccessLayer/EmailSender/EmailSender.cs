@@ -44,7 +44,7 @@ namespace DataAccessLayer.EmailSender
                 using (SmtpClient smtp = new SmtpClient())
                 {
                     SmtpPackage smtpPackage;
-                    using (StreamReader file = File.OpenText(@"D:\SmtpPackage.json"))
+                    using (StreamReader file = File.OpenText(@"..\DataAccessLayer\EmailSender\SmtpPackage.json"))
                     {
                         JsonSerializer deserializer = new JsonSerializer();
                         smtpPackage = (SmtpPackage)deserializer.Deserialize(file, typeof(SmtpPackage));
