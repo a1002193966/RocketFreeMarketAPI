@@ -1,7 +1,5 @@
-﻿using DTO;
-using System;
+﻿using System;
 
-using System.Collections.ObjectModel;
 namespace Entities
 {
     public class Account
@@ -15,7 +13,9 @@ namespace Entities
         public DateTime CreationDate { get; set; }
         public DateTime UpdateDate { get; set; }
         public DateTime LastLoginDate { get; set; }
-        public int Status { get; set; }
+        public int EmailVerificationStatus { get; set; }
+        public int PhoneVerificationStatus { get; set; }
+        public int AccountStatus { get; set; }
         public string AccountType { get; set; }
         
     }

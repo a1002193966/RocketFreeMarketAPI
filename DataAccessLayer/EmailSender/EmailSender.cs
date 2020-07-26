@@ -20,7 +20,7 @@ namespace DataAccessLayer.EmailSender
         public EmailSender(IConfiguration configuration, ICryptoProcess cryptoProcess)
         {
             _cryptoProcess = cryptoProcess;
-            _connectionString = _cryptoProcess.DecodeHash(configuration.GetConnectionString("AccessConnection"));
+            _connectionString = _cryptoProcess.DecodeHash(configuration.GetConnectionString("DefaultConnection"));
         }
 
         public void ExecuteSender(string email)
