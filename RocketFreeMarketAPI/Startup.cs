@@ -11,6 +11,7 @@ using DataAccessLayer.Infrastructure;
 using DataAccessLayer.DatabaseConnection;
 using DataAccessLayer.Cryptography;
 using DataAccessLayer.EmailSender;
+using Entities;
 
 namespace RocketFreeMarketAPI
 {
@@ -38,6 +39,7 @@ namespace RocketFreeMarketAPI
             services.AddSingleton<IAccountConnection, AccountConnection>();
             services.AddTransient<ICryptoProcess, CryptoProcess>();
             services.AddTransient<IEmailSender, EmailSender>();
+
 
         }
 

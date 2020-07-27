@@ -12,11 +12,18 @@ namespace DataAccessLayer.DatabaseConnection
     {
         private readonly ICryptoProcess _cryptoProcess;
         private readonly string _connectionString;
+        IConfiguration configuration;
 
-        public AccountConnection(ICryptoProcess cryptoProcess, IConfiguration configuration)
+        public AccountConnection(ICryptoProcess cryptoProcess, string ConnectionName)
         {
             _cryptoProcess = cryptoProcess;
-            _connectionString = configuration.GetConnectionString("DefaultConnection");
+            _connectionString = configuration.GetConnectionString(ConnectionName);
+        }
+
+        private SqlConnection establishSqlConnection()
+        {
+            SqlConnection sqlcon = new SqlConnection(_connectionString);
+            return sqlcon;
         }
 
         /*
@@ -30,6 +37,7 @@ namespace DataAccessLayer.DatabaseConnection
 
         public bool Register(RegisterInput registerInput)
         {
+            return false;
             //check if email is already existed.
             if (!isExist(registerInput.Email))
             {
@@ -79,8 +87,9 @@ namespace DataAccessLayer.DatabaseConnection
           
                     if (accountID != 0 && accountInsertResult > 0  && accessInsertResult > 0 && userInsertResult > 0)
                     {
-                            sqltrans.Commit();
-                            return true;
+                        sqltrans.Commit();
+                        //throw new Exception();
+                        return true;
                     }
                     else
                     {
@@ -341,11 +350,6 @@ namespace DataAccessLayer.DatabaseConnection
             }
         }
 
-        private SqlConnection establishSqlConnection()
-        {
-            SqlConnection sqlcon = new SqlConnection(_connectionString);
-            return sqlcon;
-        }
         #endregion
 
 
