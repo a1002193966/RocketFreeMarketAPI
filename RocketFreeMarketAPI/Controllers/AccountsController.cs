@@ -8,6 +8,7 @@ using DataAccessLayer.Infrastructure;
 using Microsoft.AspNetCore.Cors;
 using DTO;
 
+
 namespace RocketFreeMarketAPI.Controllers
 {
     [Route("[controller]")]
@@ -16,16 +17,19 @@ namespace RocketFreeMarketAPI.Controllers
     public class AccountsController : ControllerBase    
     {
         private readonly IAccountConnection _conn;
-        public AccountsController(IAccountConnection conn)
+        private readonly IEmailSender _emailSender;
+
+        public AccountsController(IAccountConnection conn, IEmailSender emailSender)
         {
             _conn = conn;
+            _emailSender = emailSender;
         }
 
 
         // GetAccountInfo <AccountsController>/test@test.com
         [HttpGet("{email}")]
         public Account GetAccountInfo([FromRoute] string email)
-        {
+        {      
             return _conn.GetAccountInfo(email);
         }
 
@@ -39,15 +43,37 @@ namespace RocketFreeMarketAPI.Controllers
         // Register <AccountsController>/register
         [HttpPost("register")]
         public bool Register([FromBody] RegisterInput registerInput)
-        {
-            return _conn.Register(registerInput);
+        {         
+            bool isDone =  _conn.Register(registerInput);
+            if(isDone)
+            {
+                try 
+                {
+                    _emailSender.ExecuteSender(registerInput.Email);
+                }                
+                catch(Exception e)
+                {
+                    throw;
+                }
+            }
+            return isDone;
         }
 
+        [HttpGet("ConfirmEmail")]
+        public bool ConfirmEmail(string e, string t)
+        {
+            // e == email, t == token
+            if (e == null || t == null) 
+                return false;
+
+            return true;
+        }
+
+
+
+
+
         
-
-
-
-
         // PUT <AccountsController>/5
         [HttpPut("{id}")]
         public void Put(int id, [FromBody] string value)
