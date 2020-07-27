@@ -27,11 +27,7 @@ namespace RocketFreeMarketAPI.Controllers
             _emailSender = emailSender;
 
         }
-        public AccountsController()
-        {
-
-        }
-
+ 
  
 
         // GetAccountInfo <AccountsController>/test@test.com

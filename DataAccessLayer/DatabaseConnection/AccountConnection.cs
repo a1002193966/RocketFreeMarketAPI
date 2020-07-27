@@ -12,12 +12,12 @@ namespace DataAccessLayer.DatabaseConnection
     {
         private readonly ICryptoProcess _cryptoProcess;
         private readonly string _connectionString;
-        IConfiguration configuration;
+       
 
-        public AccountConnection(ICryptoProcess cryptoProcess, string ConnectionName)
+        public AccountConnection(ICryptoProcess cryptoProcess, IConfiguration configuration)
         {
             _cryptoProcess = cryptoProcess;
-            _connectionString = configuration.GetConnectionString(ConnectionName);
+            _connectionString = configuration.GetConnectionString("DefaultConnection");
         }
 
         private SqlConnection establishSqlConnection()
