@@ -14,33 +14,29 @@ namespace RocketFreeMarketAPI.Controllers.Tests
     [TestClass]
     public class AccountsControllerTests: ControllerBase
     {
-        AccountsController _controller;
-        private  IAccountConnection _conn;
-        private  IEmailSender _emailSender;
-        private  ICryptoProcess _cryptoProcess;
-        private string _connectionString;
-        private IConfiguration _configuration;
+        private AccountsController controller = new AccountsController();
+        private readonly IAccountConnection _accountConnection;
+        private readonly IEmailSender _emailSender;
+        private readonly ICryptoProcess _cryptoProcess;  
+        private readonly IConfiguration _configuration;
+        private readonly string _connectionString;
 
-        public AccountsControllerTests(IAccountConnection conn, IEmailSender emailSender)
+        public AccountsControllerTests(IAccountConnection accountConnection, IEmailSender emailSender, ICryptoProcess cryptoProcess, IConfiguration configuration)
         {
-            _conn = conn;
+            _accountConnection = accountConnection;
             _emailSender = emailSender;
+            _cryptoProcess = cryptoProcess;
+            _configuration = configuration;
         }
 
         [ClassInitialize]
         public void SetUp()
         {
-            _cryptoProcess = new CryptoProcess();
-            _conn = new AccountConnection(_cryptoProcess,  _configuration);
-            _emailSender = new EmailSender(_configuration, _cryptoProcess);
         }
 
         [TestInitialize]
         public void Initalize()
         {
-            _cryptoProcess = new CryptoProcess();
-            _conn = new AccountConnection(_cryptoProcess, _configuration);
-            _emailSender = new EmailSender(_configuration, _cryptoProcess);
         }
 
         [TestMethod]
@@ -56,7 +52,7 @@ namespace RocketFreeMarketAPI.Controllers.Tests
             registerInput.Password = "Hello";
 
             // Act
-            var actual = _controller.Register(registerInput);
+            var actual = controller.Register(registerInput);
 
             // Assert
             var expected = HttpStatusCode.Created;
