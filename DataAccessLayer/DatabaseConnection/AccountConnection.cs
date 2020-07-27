@@ -3,8 +3,9 @@ using DTO;
 using Entities;
 using Microsoft.Extensions.Configuration;
 using System;
+using System.Collections.Generic;
 using System.Data.SqlClient;
-
+using System.Text;
 
 namespace DataAccessLayer.DatabaseConnection
 {
@@ -12,7 +13,7 @@ namespace DataAccessLayer.DatabaseConnection
     {
         private readonly ICryptoProcess _cryptoProcess;
         private readonly string _connectionString;
-       
+
 
         public AccountConnection(ICryptoProcess cryptoProcess, IConfiguration configuration)
         {
@@ -37,7 +38,6 @@ namespace DataAccessLayer.DatabaseConnection
 
         public bool Register(RegisterInput registerInput)
         {
-            return false;
             //check if email is already existed.
             if (!isExist(registerInput.Email))
             {
@@ -52,7 +52,7 @@ namespace DataAccessLayer.DatabaseConnection
 
                 //Creating Account              
                 AccountDTO accountDTO = new AccountDTO(registerInput, secret);
-            
+
                 try
                 {
                     //open db connection
@@ -84,8 +84,8 @@ namespace DataAccessLayer.DatabaseConnection
 
                     //insert User to database
                     int userInsertResult = insertData(sqlcon, sqltrans, userDTO, QueryConst.UserInsertCMD);
-          
-                    if (accountID != 0 && accountInsertResult > 0  && accessInsertResult > 0 && userInsertResult > 0)
+
+                    if (accountID != 0 && accountInsertResult > 0 && accessInsertResult > 0 && userInsertResult > 0)
                     {
                         sqltrans.Commit();
                         //throw new Exception();
@@ -162,7 +162,7 @@ namespace DataAccessLayer.DatabaseConnection
                         account.AccountStatus = (int)reader["AccountStatus"];
                         account.AccountType = (string)reader["AccountType"];
                     }
-                }   
+                }
 
                 //Assign Aes key from Access database to Account Class
                 getAccKeyCmd.Parameters.AddWithValue("@AccountID", account.AccountID);
@@ -172,8 +172,8 @@ namespace DataAccessLayer.DatabaseConnection
                     {
                         account.AesKey = (byte[])accessReader["AesKey"];
                     }
-                }                                
-                return account;  
+                }
+                return account;
             }
             catch (Exception e)
             {
@@ -277,8 +277,8 @@ namespace DataAccessLayer.DatabaseConnection
                         account.PasswordHash = (byte[])reader["PasswordHash"];
                         account.AesIV = (byte[])reader["AesIV"];
                     }
-                }               
-                           
+                }
+
                 //get Aes key from Access database     
                 getKeycmd.Parameters.AddWithValue("@AccountID", account.AccountID);
                 using (SqlDataReader accessReader = getKeycmd.ExecuteReader())
@@ -287,7 +287,7 @@ namespace DataAccessLayer.DatabaseConnection
                     {
                         account.AesKey = (byte[])accessReader["AesKey"];
                     }
-                }                                       
+                }
                 return hashCompare(account.PasswordHash, _cryptoProcess.Encrypt_Aes_With_Key_IV(loginInput.Password, account.AesKey, account.AesIV));
             }
             catch (Exception e)

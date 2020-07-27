@@ -17,7 +17,5 @@ namespace Entities
         public int PhoneVerificationStatus { get; set; }
         public int AccountStatus { get; set; }
         public string AccountType { get; set; }
-        
     }
-
 }
