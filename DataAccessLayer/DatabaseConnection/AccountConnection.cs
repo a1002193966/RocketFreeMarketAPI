@@ -16,7 +16,7 @@ namespace DataAccessLayer.DatabaseConnection
         public AccountConnection(ICryptoProcess cryptoProcess, IConfiguration configuration)
         {
             _cryptoProcess = cryptoProcess;
-            _connectionString = cryptoProcess.DecodeHash(configuration.GetConnectionString("DefaultConnection"));
+            _connectionString = configuration.GetConnectionString("DefaultConnection");
         }
 
         /*
