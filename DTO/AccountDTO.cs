@@ -1,4 +1,5 @@
-﻿
+﻿using System;
+
 namespace DTO
 {
     public class AccountDTO
@@ -22,5 +23,4 @@ namespace DTO
             this.AccountType = "Customer";
         }
     }
-
 }

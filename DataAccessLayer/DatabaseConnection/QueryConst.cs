@@ -1,4 +1,7 @@
-﻿
+﻿using System;
+using System.Collections.Generic;
+using System.Text;
+
 namespace DataAccessLayer.DatabaseConnection
 {
     public static class QueryConst

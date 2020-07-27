@@ -25,20 +25,20 @@ namespace DataAccessLayer.EmailSender
 
         public void ExecuteSender(string email)
         {
-            try 
+            try
             {
                 string token = generateToken(email);
                 saveToken(email, token);
                 sendEmailConfirmation(email, token);
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 throw;
-            }           
+            }
         }
 
         private void sendEmailConfirmation(string email, string token)
-        {      
+        {
             using (MailMessage mail = new MailMessage())
             {
                 using (SmtpClient smtp = new SmtpClient())
@@ -49,7 +49,7 @@ namespace DataAccessLayer.EmailSender
                         JsonSerializer deserializer = new JsonSerializer();
                         smtpPackage = (SmtpPackage)deserializer.Deserialize(file, typeof(SmtpPackage));
                     }
-                           
+
                     mail.From = new MailAddress(_cryptoProcess.Decrypt_Aes(smtpPackage.UsernamePackage));
                     mail.To.Add(email);
                     mail.IsBodyHtml = true;
@@ -62,7 +62,7 @@ namespace DataAccessLayer.EmailSender
                     smtp.EnableSsl = true;
                     smtp.Send(mail);
                 }
-            }                  
+            }
         }
 
         private void saveToken(string email, string token)
@@ -91,6 +91,5 @@ namespace DataAccessLayer.EmailSender
             }
             return token;
         }
-
     }
-}          
+}

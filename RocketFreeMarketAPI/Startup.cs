@@ -2,16 +2,18 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using DataAccessLayer.Cryptography;
+using DataAccessLayer.DatabaseConnection;
+using DataAccessLayer.EmailSender;
+using DataAccessLayer.Infrastructure;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.HttpsPolicy;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using DataAccessLayer.Infrastructure;
-using DataAccessLayer.DatabaseConnection;
-using DataAccessLayer.Cryptography;
-using DataAccessLayer.EmailSender;
-using Entities;
+using Microsoft.Extensions.Logging;
 
 namespace RocketFreeMarketAPI
 {
@@ -27,20 +29,17 @@ namespace RocketFreeMarketAPI
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddCors(options => options.AddPolicy(name: "CorsPolicy", 
+            services.AddCors(options => options.AddPolicy(name: "CorsPolicy",
                                                             builder => {
                                                                 builder.AllowAnyOrigin()
                                                                        .AllowAnyHeader()
                                                                        .AllowAnyMethod();
                                                             }
-                                                            ));      
-
+                                                            ));
             services.AddControllers();
-            services.AddTransient<IAccountConnection, AccountConnection>();
+            services.AddSingleton<IAccountConnection, AccountConnection>();
             services.AddTransient<ICryptoProcess, CryptoProcess>();
             services.AddTransient<IEmailSender, EmailSender>();
-
-
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

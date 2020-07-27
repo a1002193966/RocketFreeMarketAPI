@@ -1,21 +1,21 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
-using Entities;
-using Microsoft.AspNetCore.Mvc;
-using DataAccessLayer.Infrastructure;
-using Microsoft.AspNetCore.Cors;
-using DTO;
-using System.Net.Http;
 using System.Net;
+using System.Threading.Tasks;
+using DataAccessLayer.Infrastructure;
+using DTO;
+using Entities;
+using Microsoft.AspNetCore.Cors;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 
 namespace RocketFreeMarketAPI.Controllers
 {
     [Route("[controller]")]
     [ApiController]
     [EnableCors("CorsPolicy")]
-    public class AccountsController : ControllerBase   
+    public class AccountsController : ControllerBase
     {
         private readonly IAccountConnection _conn;
         private readonly IEmailSender _emailSender;
@@ -27,27 +27,26 @@ namespace RocketFreeMarketAPI.Controllers
             _emailSender = emailSender;
 
         }
- 
- 
+
+
 
         // GetAccountInfo <AccountsController>/test@test.com
         [HttpGet("{email}")]
-        public HttpStatusCode GetAccountInfo([FromRoute] string email)
+        public Account GetAccountInfo([FromRoute] string email)
         {
             try
             {
                 Account account = _conn.GetAccountInfo(email);
                 if (account.AccountID == 0)
                 {
-                    return HttpStatusCode.NoContent;
+                    return null;
                 }
+                return account;
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 throw;
             }
-
-            return HttpStatusCode.OK;
         }
 
         //Login <AccountsController>/login
@@ -63,7 +62,7 @@ namespace RocketFreeMarketAPI.Controllers
                     return HttpStatusCode.OK;
                 }
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 throw;
             }
@@ -82,7 +81,7 @@ namespace RocketFreeMarketAPI.Controllers
                 if (isDone)
                 {
                     status = HttpStatusCode.Created;
-                    
+
                     _emailSender.ExecuteSender(registerInput.Email);
                 }
             }
@@ -97,26 +96,10 @@ namespace RocketFreeMarketAPI.Controllers
         public HttpStatusCode ConfirmEmail(string e, string t)
         {
             // e == email, t == token
-            if (e == null || t == null) 
+            if (e == null || t == null)
                 return HttpStatusCode.Unauthorized;
 
-            return  HttpStatusCode.OK;
+            return HttpStatusCode.OK;
         }
-
-
-        
-        // PUT <AccountsController>/5
-        [HttpPut("{id}")]
-        public void Put(int id, [FromBody] string value)
-        {
-        }
-
-        // DELETE <AccountsController>/5
-        [HttpDelete("{id}")]
-        public void Delete(int id)
-        {
-        }
-
-
     }
 }
