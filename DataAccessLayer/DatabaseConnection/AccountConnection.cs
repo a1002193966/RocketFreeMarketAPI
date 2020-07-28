@@ -1,4 +1,5 @@
-﻿using DataAccessLayer.Infrastructure;
+﻿using DataAccessLayer.Cryptography;
+using DataAccessLayer.Infrastructure;
 using DTO;
 using Entities;
 using Microsoft.Extensions.Configuration;
@@ -15,17 +16,16 @@ namespace DataAccessLayer.DatabaseConnection
         private readonly string _connectionString;
 
 
+        public AccountConnection(CryptoProcess cryptoProcess, string connectionString)
+        {
+            _cryptoProcess = cryptoProcess;
+            _connectionString = connectionString;
+        }
         public AccountConnection(ICryptoProcess cryptoProcess, IConfiguration configuration)
         {
             _cryptoProcess = cryptoProcess;
             _connectionString = configuration.GetConnectionString("DefaultConnection");
-        }
-
-        private SqlConnection establishSqlConnection()
-        {
-            SqlConnection sqlcon = new SqlConnection(_connectionString);
-            return sqlcon;
-        }
+        }     
 
         /*
          * Register new user
@@ -191,6 +191,11 @@ namespace DataAccessLayer.DatabaseConnection
 
 
         #region Private Help Functions
+        private SqlConnection establishSqlConnection()
+        {
+            SqlConnection sqlcon = new SqlConnection(_connectionString);
+            return sqlcon;
+        }
 
         private int insertData<T>(SqlConnection sqlcon, SqlTransaction sqltrans, T model, String query)
         {
