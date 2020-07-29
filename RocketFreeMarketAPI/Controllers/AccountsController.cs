@@ -28,7 +28,7 @@ namespace RocketFreeMarketAPI.Controllers
 
         }
 
-
+          
 
         // GetAccountInfo <AccountsController>/test@test.com
         [HttpGet("{email}")]
