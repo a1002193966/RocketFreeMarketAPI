@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace DTO
 {
@@ -25,5 +23,4 @@ namespace DTO
             this.AccountType = "Customer";
         }
     }
-
 }

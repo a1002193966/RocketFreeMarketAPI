@@ -1,94 +1,105 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Threading.Tasks;
-using Entities;
-using Microsoft.AspNetCore.Mvc;
 using DataAccessLayer.Infrastructure;
-using Microsoft.AspNetCore.Cors;
 using DTO;
-using Microsoft.Extensions.Configuration;
+using Entities;
+using Microsoft.AspNetCore.Cors;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 
 namespace RocketFreeMarketAPI.Controllers
 {
     [Route("[controller]")]
     [ApiController]
     [EnableCors("CorsPolicy")]
-    public class AccountsController : ControllerBase    
+    public class AccountsController : ControllerBase
     {
         private readonly IAccountConnection _conn;
         private readonly IEmailSender _emailSender;
-        private readonly ICryptoProcess _cryptoProcess;
-        private readonly IConfiguration _configuration;
 
-        public AccountsController(IAccountConnection conn, IEmailSender emailSender, ICryptoProcess cryptoProcess, IConfiguration configuration)
+
+        public AccountsController(IAccountConnection conn, IEmailSender emailSender)
         {
             _conn = conn;
             _emailSender = emailSender;
-            _cryptoProcess = cryptoProcess;
-            _configuration = configuration;
+
         }
+
 
 
         // GetAccountInfo <AccountsController>/test@test.com
         [HttpGet("{email}")]
         public Account GetAccountInfo([FromRoute] string email)
-        {      
-            return _conn.GetAccountInfo(email);
+        {
+            try
+            {
+                Account account = _conn.GetAccountInfo(email);
+                if (account.AccountID == 0)
+                {
+                    return null;
+                }
+                return account;
+            }
+            catch (Exception e)
+            {
+                throw;
+            }
         }
 
         //Login <AccountsController>/login
         [HttpPost("login")]
-        public bool Login([FromBody] LoginInput loginInput)
+        public HttpStatusCode Login([FromBody] LoginInput loginInput)
         {
-            return _conn.Login(loginInput);
+            try
+            {
+                bool Verified = _conn.Login(loginInput);
+
+                if (Verified)
+                {
+                    return HttpStatusCode.OK;
+                }
+            }
+            catch (Exception e)
+            {
+                throw;
+            }
+            return HttpStatusCode.BadRequest;
         }
 
         // Register <AccountsController>/register
         [HttpPost("register")]
-        public bool Register([FromBody] RegisterInput registerInput)
-        {         
-            bool isDone =  _conn.Register(registerInput);
-            if(isDone)
+        public HttpStatusCode Register([FromBody] RegisterInput registerInput)
+        {
+            HttpStatusCode status = HttpStatusCode.BadRequest;
+            try
             {
-                try 
+                bool isDone = _conn.Register(registerInput);
+
+                if (isDone)
                 {
+                    status = HttpStatusCode.Created;
+
                     _emailSender.ExecuteSender(registerInput.Email);
-                }                
-                catch(Exception e)
-                {
-                    throw;
                 }
             }
-            return isDone;
+            catch (Exception e)
+            {
+                throw;
+            }
+            return status;
         }
 
         [HttpGet("ConfirmEmail")]
-        public bool ConfirmEmail(string e, string t)
+        public HttpStatusCode ConfirmEmail(string e, string t)
         {
             // e == email, t == token
-            if (e == null || t == null) 
-                return false;
+            if (e == null || t == null)
+                return HttpStatusCode.Unauthorized;
 
-            return true;
-        }
-        
-
-
-
-
-
-
-        // PUT <AccountsController>/5
-        [HttpPut("{id}")]
-        public void Put(int id, [FromBody] string value)
-        {
-        }
-
-        // DELETE <AccountsController>/5
-        [HttpDelete("{id}")]
-        public void Delete(int id)
-        {
+            return HttpStatusCode.OK;
         }
     }
 }
