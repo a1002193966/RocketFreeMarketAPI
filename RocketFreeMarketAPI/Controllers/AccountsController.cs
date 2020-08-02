@@ -96,10 +96,21 @@ namespace RocketFreeMarketAPI.Controllers
         public HttpStatusCode ConfirmEmail(string e, string t)
         {
             // e == email, t == token
-            if (e == null || t == null)
+            
+            try
+            {
+                if (e == null || t == null || _conn.ActivateAccount(e, t) == false)
+                    return HttpStatusCode.Unauthorized;
+            }
+            catch
+            {
                 return HttpStatusCode.Unauthorized;
+            }
 
             return HttpStatusCode.OK;
         }
+
+
+
     }
 }

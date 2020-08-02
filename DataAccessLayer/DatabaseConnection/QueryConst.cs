@@ -11,6 +11,9 @@ namespace DataAccessLayer.DatabaseConnection
         public readonly static string UserInsertCMD = "INSERT INTO [User](AccountID) VALUES(@AccountID)";
 
 
+        public readonly static string VerifyTokenCMD = "SELECT * FROM [ConfirmationToken] WHERE Email = @Email AND Token = @Token AND TokenType = 'Email' AND ExpirationDate > GETDATE()";
+        public readonly static string ActivateAccountCMD = "UPDATE [Account] SET EmailVerificationStatus = 1 WHERE Email = @Email";
+
         public readonly static string GetAccountInfoByEmailCMD = "SELECT * FROM [Account] WHERE Email = @Email";
         public readonly static string GetAccountIDByEmailCMD = "SELECT AccountID FROM [Account] WHERE Email = @Email";
         public readonly static string GetAccountHashCMD = "SELECT AccountID, PasswordHash, AesIV FROM [Account] WHERE Email = @Email";

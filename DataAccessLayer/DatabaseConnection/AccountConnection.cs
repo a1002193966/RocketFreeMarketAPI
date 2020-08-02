@@ -187,6 +187,71 @@ namespace DataAccessLayer.DatabaseConnection
             }
         }
 
+        private bool verifyToken(string email, string token)
+        {
+            
+            var sqlcon = establishSqlConnection();
+            SqlCommand sqlcmd = null;
+
+            try
+            {
+                sqlcon.Open();
+                sqlcmd = new SqlCommand(QueryConst.VerifyTokenCMD, sqlcon);
+                sqlcmd.Parameters.AddWithValue("@Email", email);
+                sqlcmd.Parameters.AddWithValue("@Token", token);
+                
+                using(SqlDataReader reader = sqlcmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        if ((string)reader["Email"] != email || (string)reader["Token"] != token)
+                        {
+                            return false;
+                        }
+                        return true;
+                    }
+                }
+                return false;
+            }
+            catch(Exception e)
+            {
+                throw;
+            }
+            finally
+            {
+                sqlcmd.Dispose();
+                sqlcon.Close();
+            }
+        }
+
+        public bool ActivateAccount(string email, string token)
+        {
+            int result = 0;
+            string emailDecrypted = _cryptoProcess.DecodeHash(email);
+
+            if (verifyToken(emailDecrypted, token))
+            {
+                using(SqlConnection sqlcon = establishSqlConnection())
+                {
+                    using(SqlCommand sqlcmd = new SqlCommand(QueryConst.ActivateAccountCMD, sqlcon))
+                    {
+                        try
+                        {
+                            sqlcon.Open();
+                            sqlcmd.Parameters.AddWithValue("@Email", emailDecrypted);
+                            result = sqlcmd.ExecuteNonQuery();
+                        }
+                        catch(Exception e) {
+                            throw;
+                        }
+                    }
+                }
+            }
+            return result > 0;
+        }
+
+        
+
 
 
 
