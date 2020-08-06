@@ -15,12 +15,14 @@ namespace DataAccessLayer.DatabaseConnection
         private readonly ICryptoProcess _cryptoProcess;
         private readonly string _connectionString;
 
-
-        public AccountConnection(CryptoProcess cryptoProcess, string connectionString)
+        
+        //Used for testing purpose.
+        public AccountConnection(ICryptoProcess cryptoProcess, string connectionString)
         {
             _cryptoProcess = cryptoProcess;
             _connectionString = connectionString;
         }
+
         public AccountConnection(ICryptoProcess cryptoProcess, IConfiguration configuration)
         {
             _cryptoProcess = cryptoProcess;
@@ -187,43 +189,7 @@ namespace DataAccessLayer.DatabaseConnection
             }
         }
 
-        private bool verifyToken(string email, string token)
-        {
-            
-            var sqlcon = establishSqlConnection();
-            SqlCommand sqlcmd = null;
-
-            try
-            {
-                sqlcon.Open();
-                sqlcmd = new SqlCommand(QueryConst.VerifyTokenCMD, sqlcon);
-                sqlcmd.Parameters.AddWithValue("@Email", email);
-                sqlcmd.Parameters.AddWithValue("@Token", token);
-                
-                using(SqlDataReader reader = sqlcmd.ExecuteReader())
-                {
-                    while (reader.Read())
-                    {
-                        if ((string)reader["Email"] != email || (string)reader["Token"] != token)
-                        {
-                            return false;
-                        }
-                        return true;
-                    }
-                }
-                return false;
-            }
-            catch(Exception e)
-            {
-                throw;
-            }
-            finally
-            {
-                sqlcmd.Dispose();
-                sqlcon.Close();
-            }
-        }
-
+        
         public bool ActivateAccount(string email, string token)
         {
             int result = 0;
@@ -231,28 +197,23 @@ namespace DataAccessLayer.DatabaseConnection
 
             if (verifyToken(emailDecrypted, token))
             {
-                using(SqlConnection sqlcon = establishSqlConnection())
+                using SqlConnection sqlcon = establishSqlConnection();
+                using SqlCommand sqlcmd = new SqlCommand(QueryConst.ActivateAccountCMD, sqlcon);
+                try
                 {
-                    using(SqlCommand sqlcmd = new SqlCommand(QueryConst.ActivateAccountCMD, sqlcon))
-                    {
-                        try
-                        {
-                            sqlcon.Open();
-                            sqlcmd.Parameters.AddWithValue("@Email", emailDecrypted);
-                            result = sqlcmd.ExecuteNonQuery();
-                        }
-                        catch(Exception e) {
-                            throw;
-                        }
-                    }
+                    sqlcon.Open();
+                    sqlcmd.Parameters.AddWithValue("@Email", emailDecrypted);
+                    result = sqlcmd.ExecuteNonQuery();
+                }
+                catch (Exception e)
+                {
+                    throw;
                 }
             }
             return result > 0;
         }
 
-        
-
-
+       
 
 
         #region Private Help Functions
@@ -293,25 +254,21 @@ namespace DataAccessLayer.DatabaseConnection
          */
         private int getAccountID(SqlConnection sqlcon, SqlTransaction sqltrans, string email)
         {
-            using (SqlCommand sqlcmd = new SqlCommand(QueryConst.GetAccountIDByEmailCMD, sqlcon, sqltrans))
+            using SqlCommand sqlcmd = new SqlCommand(QueryConst.GetAccountIDByEmailCMD, sqlcon, sqltrans);
+            try
             {
-                try
+                sqlcmd.Parameters.AddWithValue("@Email", email);
+                using SqlDataReader reader = sqlcmd.ExecuteReader();
+                int id = 0;
+                while (reader.Read())
                 {
-                    sqlcmd.Parameters.AddWithValue("@Email", email);
-                    using (SqlDataReader reader = sqlcmd.ExecuteReader())
-                    {
-                        int id = 0;
-                        while (reader.Read())
-                        {
-                            id = (int)reader["AccountID"];
-                        }
-                        return id;
-                    }
+                    id = (int)reader["AccountID"];
                 }
-                catch (Exception e)
-                {
-                    throw;
-                }
+                return id;
+            }
+            catch (Exception e)
+            {
+                throw;
             }
         }
 
@@ -395,28 +352,55 @@ namespace DataAccessLayer.DatabaseConnection
          */
         private bool isExist(string email)
         {
-            using (SqlConnection sqlconn = establishSqlConnection())
+            using SqlConnection sqlconn = establishSqlConnection();
+            using SqlCommand sqlcmd = new SqlCommand(QueryConst.GetAccountIDByEmailCMD, sqlconn);
+            try
             {
-                using (SqlCommand sqlcmd = new SqlCommand(QueryConst.GetAccountIDByEmailCMD, sqlconn))
+                sqlconn.Open();
+                sqlcmd.Parameters.AddWithValue("@Email", email);
+                using SqlDataReader reader = sqlcmd.ExecuteReader();
+                return reader.Read();
+            }
+            catch (Exception e)
+            {
+                throw;
+            }
+            finally
+            {
+                sqlconn.Close();
+            }
+        }
+
+        private bool verifyToken(string email, string token)
+        {
+
+            var sqlcon = establishSqlConnection();
+            SqlCommand sqlcmd = null;
+
+            try
+            {
+                sqlcon.Open();
+                sqlcmd = new SqlCommand(QueryConst.VerifyTokenCMD, sqlcon);
+                sqlcmd.Parameters.AddWithValue("@Email", email);
+                sqlcmd.Parameters.AddWithValue("@Token", token);
+
+                using (SqlDataReader reader = sqlcmd.ExecuteReader())
                 {
-                    try
+                    while (reader.Read())
                     {
-                        sqlconn.Open();
-                        sqlcmd.Parameters.AddWithValue("@Email", email);
-                        using (SqlDataReader reader = sqlcmd.ExecuteReader())
-                        {
-                            return reader.Read();
-                        }
-                    }
-                    catch (Exception e)
-                    {
-                        throw;
-                    }
-                    finally
-                    {
-                        sqlconn.Close();
+                        return (string)reader["Email"] == email && (string)reader["Token"] == token;
                     }
                 }
+                return false;
+            }
+            catch (Exception e)
+            {
+                throw;
+            }
+            finally
+            {
+                sqlcmd.Dispose();
+                sqlcon.Close();
             }
         }
 
