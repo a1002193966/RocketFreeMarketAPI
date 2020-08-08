@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using DataAccessLayer.Infrastructure;
 using DTO;
 using Entities;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -110,7 +111,18 @@ namespace RocketFreeMarketAPI.Controllers
             return HttpStatusCode.OK;
         }
 
-
+        [HttpGet("GetStatus/{email}")]
+        public int GetStatus(string email)
+        {
+            try
+            {
+                return _conn.getAccountStatus(email);
+            }
+            catch(Exception e)
+            {
+                throw;
+            }
+        }
 
     }
 }

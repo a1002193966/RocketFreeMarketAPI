@@ -159,8 +159,8 @@ namespace DataAccessLayer.DatabaseConnection
                         account.CreationDate = (DateTime)reader["CreationDate"];
                         account.UpdateDate = (DateTime)reader["UpdateDate"];
                         account.LastLoginDate = (DateTime)reader["LastLoginDate"];
-                        account.EmailVerificationStatus = (int)reader["EmailVerificationStatus"];
-                        account.PhoneVerificationStatus = (int)reader["PhoneVerificationStatus"];
+                        account.EmailVerificationStatus = (bool)reader["EmailVerificationStatus"];
+                        account.PhoneVerificationStatus = (bool)reader["PhoneVerificationStatus"];
                         account.AccountStatus = (int)reader["AccountStatus"];
                         account.AccountType = (string)reader["AccountType"];
                     }
@@ -352,11 +352,11 @@ namespace DataAccessLayer.DatabaseConnection
          */
         private bool isExist(string email)
         {
-            using SqlConnection sqlconn = establishSqlConnection();
-            using SqlCommand sqlcmd = new SqlCommand(QueryConst.GetAccountIDByEmailCMD, sqlconn);
+            using SqlConnection sqlcon = establishSqlConnection();
+            using SqlCommand sqlcmd = new SqlCommand(QueryConst.GetAccountIDByEmailCMD, sqlcon);
             try
             {
-                sqlconn.Open();
+                sqlcon.Open();
                 sqlcmd.Parameters.AddWithValue("@Email", email);
                 using SqlDataReader reader = sqlcmd.ExecuteReader();
                 return reader.Read();
@@ -365,11 +365,30 @@ namespace DataAccessLayer.DatabaseConnection
             {
                 throw;
             }
-            finally
+        }
+
+        private int getAccountStatus(string email)
+        {
+            int status = 0;
+            using SqlConnection sqlcon = establishSqlConnection();
+            using SqlCommand sqlcmd = new SqlCommand(QueryConst.GetAccountStatusByEmailCMD, sqlcon);
+            try
             {
-                sqlconn.Close();
+                sqlcon.Open();
+                sqlcmd.Parameters.AddWithValue("@Email", email);
+                using (SqlDataReader reader = sqlcmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                        status = (int)reader["AccountStatus"];
+                }
+                return status;
+            }
+            catch(Exception e)
+            {
+                throw;
             }
         }
+
 
         private bool verifyToken(string email, string token)
         {
