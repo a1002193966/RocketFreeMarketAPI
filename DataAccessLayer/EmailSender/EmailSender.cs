@@ -4,6 +4,7 @@ using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Data.SqlClient;
 using System.IO;
 using System.Net;
@@ -23,19 +24,23 @@ namespace DataAccessLayer.EmailSender
             _connectionString = configuration.GetConnectionString("DefaultConnection");
         }
 
-        public void ExecuteSender(string email)
+        public bool ExecuteSender(string email)
         {
             try
             {
                 string token = generateToken(email);
-                saveToken(email, token);
+                int result = saveToken(email, token);
                 sendEmailConfirmation(email, token);
+                return result > 0;
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 throw;
             }
         }
+
+
+        #region Private Help Functions
 
         private void sendEmailConfirmation(string email, string token)
         {
@@ -55,7 +60,7 @@ namespace DataAccessLayer.EmailSender
                     mail.IsBodyHtml = true;
                     mail.Subject = "Rocket Free Market Email Confirmation";
                     mail.Body = string.Format(smtpPackage.EmailBody, string.Format(smtpPackage.ConfirmationLink, _cryptoProcess.EncodeText(email), token));
-
+                    
                     smtp.Host = smtpPackage.Host;
                     smtp.Port = smtpPackage.Port;
                     smtp.Credentials = new NetworkCredential(_cryptoProcess.Decrypt_Aes(smtpPackage.UsernamePackage), _cryptoProcess.Decrypt_Aes(smtpPackage.PasswordPackage));
@@ -65,20 +70,18 @@ namespace DataAccessLayer.EmailSender
             }
         }
 
-        private void saveToken(string email, string token)
+ 
+        private int saveToken(string email, string token)
         {
-            using (SqlConnection sqlcon = new SqlConnection(_connectionString))
-            {
-                sqlcon.Open();
-                string cmd = "INSERT INTO [ConfirmationToken](Email, Token, TokenType) VALUES(@Email, @Token, @TokenType)";
-                using (SqlCommand sqlcmd = new SqlCommand(cmd, sqlcon))
-                {
-                    sqlcmd.Parameters.AddWithValue("@Email", email);
-                    sqlcmd.Parameters.AddWithValue("@Token", token);
-                    sqlcmd.Parameters.AddWithValue("@TokenType", "Email");
-                    sqlcmd.ExecuteNonQuery();
-                }
-            }
+            using SqlConnection sqlcon = new SqlConnection(_connectionString);
+            sqlcon.Open();
+            string cmd = "SP_UPDATE_TOKEN";
+            using SqlCommand sqlcmd = new SqlCommand(cmd, sqlcon);
+            sqlcmd.CommandType = CommandType.StoredProcedure;
+            sqlcmd.Parameters.AddWithValue("@Email", email);
+            sqlcmd.Parameters.AddWithValue("@Token", token);
+            int result = sqlcmd.ExecuteNonQuery();
+            return result;
         }
 
         private string generateToken(string email)
@@ -91,5 +94,7 @@ namespace DataAccessLayer.EmailSender
             }
             return token;
         }
+
+        #endregion
     }
 }

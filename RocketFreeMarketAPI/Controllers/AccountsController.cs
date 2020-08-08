@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Reflection.Metadata.Ecma335;
+using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
 using DataAccessLayer.Infrastructure;
 using DTO;
@@ -96,7 +98,6 @@ namespace RocketFreeMarketAPI.Controllers
         public HttpStatusCode ConfirmEmail(string e, string t)
         {
             // e == email, t == token
-            
             try
             {
                 if (e == null || t == null || _conn.ActivateAccount(e, t) == false)
@@ -106,7 +107,6 @@ namespace RocketFreeMarketAPI.Controllers
             {
                 return HttpStatusCode.Unauthorized;
             }
-
             return HttpStatusCode.OK;
         }
 
