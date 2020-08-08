@@ -12,9 +12,10 @@ namespace DataAccessLayer.DatabaseConnection
 
 
         public readonly static string VerifyTokenCMD = "SELECT Email, Token FROM [ConfirmationToken] WHERE Email = @Email AND Token = @Token AND TokenType = 'Email' AND ExpirationDate > GETDATE()";
-        public readonly static string ActivateAccountCMD = "UPDATE [Account] SET EmailVerificationStatus = 1 WHERE Email = @Email";
+        public readonly static string ActivateAccountCMD = "UPDATE [Account] SET EmailVerificationStatus = 1, AccountStatus = 1 WHERE Email = @Email";
 
         public readonly static string GetAccountInfoByEmailCMD = "SELECT * FROM [Account] WHERE Email = @Email";
+        public const string GetAccountStatusByEmailCMD = "SELECT AccountStatus FROM [Account] WHERE Email = @Email";
         public readonly static string GetAccountIDByEmailCMD = "SELECT AccountID FROM [Account] WHERE Email = @Email";
         public readonly static string GetAccountHashCMD = "SELECT AccountID, PasswordHash, AesIV FROM [Account] WHERE Email = @Email";
         public readonly static string GetAccountKeyCMD = "SELECT AesKey FROM [Access] WHERE AccountID = @AccountID";
