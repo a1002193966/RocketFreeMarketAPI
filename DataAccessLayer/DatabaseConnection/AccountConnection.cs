@@ -213,8 +213,6 @@ namespace DataAccessLayer.DatabaseConnection
             return result > 0;
         }
 
-       
-
 
         #region Private Help Functions
         private SqlConnection establishSqlConnection()
