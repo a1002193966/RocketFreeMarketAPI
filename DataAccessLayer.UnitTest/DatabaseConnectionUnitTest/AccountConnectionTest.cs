@@ -9,7 +9,7 @@ namespace DataAccessLayerUnitTest.DatabaseConnection.UnitTest
     [TestClass]
     public class AccountConnectionTest
     {
-        private readonly string _connectionString = "Server=.\\SQLEXPRESS; Database=RocketFreeMarket; Trusted_Connection=True;";
+        private const string _connectionString = "Server=.\\SQLEXPRESS; Database=RocketFreeMarket; Trusted_Connection=True;";
 
         [TestMethod]
         public void Register_NewAccount_ReturnTrue()
