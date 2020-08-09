@@ -6,7 +6,9 @@ using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
+using System.Reflection.Metadata.Ecma335;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace DataAccessLayer.DatabaseConnection
 {
@@ -38,19 +40,19 @@ namespace DataAccessLayer.DatabaseConnection
          * if exist, return false
          */
 
-        public bool Register(RegisterInput registerInput)
+        public async Task<bool> Register(RegisterInput registerInput)
         {
             //check if email is already existed.
-            if (!isExist(registerInput.Email))
+            if (!await isExist(registerInput.Email))
             {
                 //SQL Transaction set to null
                 SqlTransaction sqltrans = null;
 
                 //Establish DBConnection
-                var sqlcon = establishSqlConnection();
+                using SqlConnection sqlcon = new SqlConnection(_connectionString);
 
                 //Create Secrect Object
-                Secret secret = _cryptoProcess.Encrypt_Aes(registerInput.Password);
+                Secret secret = await _cryptoProcess.Encrypt_Aes(registerInput.Password);
 
                 //Creating Account              
                 AccountDTO accountDTO = new AccountDTO(registerInput, secret);
@@ -64,10 +66,10 @@ namespace DataAccessLayer.DatabaseConnection
                     sqltrans = sqlcon.BeginTransaction();
 
                     //insert Account to database  
-                    int accountInsertResult = insertData(sqlcon, sqltrans, accountDTO, QueryConst.AccountInsertCMD);
+                    int accountInsertResult = await insertData(sqlcon, sqltrans, accountDTO, QueryConst.AccountInsertCMD);
 
                     //if inserted, get the AccountID
-                    int accountID = getAccountID(sqlcon, sqltrans, registerInput.Email);
+                    int accountID = await getAccountID(sqlcon, sqltrans, registerInput.Email);
 
                     UserDTO userDTO = new UserDTO()
                     {
@@ -82,10 +84,10 @@ namespace DataAccessLayer.DatabaseConnection
                     };
 
                     //insert Access Key to database  
-                    int accessInsertResult = insertData(sqlcon, sqltrans, access, QueryConst.AccessInsertCMD);
+                    int accessInsertResult = await insertData(sqlcon, sqltrans, access, QueryConst.AccessInsertCMD);
 
                     //insert User to database
-                    int userInsertResult = insertData(sqlcon, sqltrans, userDTO, QueryConst.UserInsertCMD);
+                    int userInsertResult = await insertData(sqlcon, sqltrans, userDTO, QueryConst.UserInsertCMD);
 
                     if (accountID != 0 && accountInsertResult > 0 && accessInsertResult > 0 && userInsertResult > 0)
                     {
@@ -106,19 +108,28 @@ namespace DataAccessLayer.DatabaseConnection
                         sqltrans.Rollback();
                     return false;
                 }
-                finally
-                {
-                    sqlcon.Close();
-                }
             }
             else
                 return false;
         }
 
 
-        public bool Login(LoginInput loginInput)
+        public async Task<int> Login(LoginInput loginInput)
         {
-            return verifyLogin(loginInput);
+            try
+            {
+                if (!await isExist(loginInput.Email))
+                {
+                    return -9;
+                }
+                bool isCredentialMatch = await verifyLogin(loginInput);
+                int status = await getAccountStatus(loginInput.Email);
+                return isCredentialMatch ? status : -9;
+            }
+            catch (Exception)
+            {
+                throw;
+            }
         }
 
 
@@ -126,30 +137,23 @@ namespace DataAccessLayer.DatabaseConnection
          * Get account infromation
          * Parameter : email
          */
-        public Account GetAccountInfo(string email)
+        public async Task<Account> GetAccountInfo(string email)
         {
             Account account = new Account();
 
-            //check if email exist
-            if (!isExist(email))
-            {
-                return account;
-            }
-
             //Establish DBConnection
-            var sqlcon = establishSqlConnection();
-            SqlCommand getAccInfocCmd = new SqlCommand(QueryConst.GetAccountInfoByEmailCMD, sqlcon);
-            SqlCommand getAccKeyCmd = new SqlCommand(QueryConst.GetAccountKeyCMD, sqlcon);
-
+            using SqlConnection sqlcon = new SqlConnection(_connectionString);
+            using SqlCommand getAccInfocCmd = new SqlCommand(QueryConst.GetAccountInfoByEmailCMD, sqlcon);
+            using SqlCommand getAccKeyCmd = new SqlCommand(QueryConst.GetAccountKeyCMD, sqlcon);
             try
             {
                 sqlcon.Open();
                 getAccInfocCmd.Parameters.AddWithValue("@Email", email);
 
                 //Get Account infromation from database
-                using (SqlDataReader reader = getAccInfocCmd.ExecuteReader())
+                using (SqlDataReader reader = await getAccInfocCmd.ExecuteReaderAsync())
                 {
-                    while (reader.Read())
+                    while (await reader.ReadAsync())
                     {
                         account.AccountID = (int)reader["AccountID"];
                         account.PhoneNumber = (string)reader["PhoneNumber"];
@@ -165,12 +169,11 @@ namespace DataAccessLayer.DatabaseConnection
                         account.AccountType = (string)reader["AccountType"];
                     }
                 }
-
                 //Assign Aes key from Access database to Account Class
                 getAccKeyCmd.Parameters.AddWithValue("@AccountID", account.AccountID);
-                using (SqlDataReader accessReader = getAccKeyCmd.ExecuteReader())
+                using (SqlDataReader accessReader = await getAccKeyCmd.ExecuteReaderAsync())
                 {
-                    while (accessReader.Read())
+                    while (await accessReader.ReadAsync())
                     {
                         account.AesKey = (byte[])accessReader["AesKey"];
                     }
@@ -181,29 +184,23 @@ namespace DataAccessLayer.DatabaseConnection
             {
                 throw;
             }
-            finally
-            {
-                getAccInfocCmd.Dispose();
-                getAccKeyCmd.Dispose();
-                sqlcon.Close();
-            }
         }
 
         
-        public bool ActivateAccount(string email, string token)
+        public async Task<bool> ActivateAccount(string email, string token)
         {
             int result = 0;
             string emailDecrypted = _cryptoProcess.DecodeHash(email);
-
-            if (verifyToken(emailDecrypted, token))
+            bool isMatch = await verifyToken(emailDecrypted, token);
+            if (isMatch)
             {
-                using SqlConnection sqlcon = establishSqlConnection();
+                using SqlConnection sqlcon = new SqlConnection(_connectionString);
                 using SqlCommand sqlcmd = new SqlCommand(QueryConst.ActivateAccountCMD, sqlcon);
                 try
                 {
                     sqlcon.Open();
                     sqlcmd.Parameters.AddWithValue("@Email", emailDecrypted);
-                    result = sqlcmd.ExecuteNonQuery();
+                    result = await sqlcmd.ExecuteNonQueryAsync();
                 }
                 catch (Exception e)
                 {
@@ -213,36 +210,25 @@ namespace DataAccessLayer.DatabaseConnection
             return result > 0;
         }
 
-       
-
 
         #region Private Help Functions
-        private SqlConnection establishSqlConnection()
-        {
-            SqlConnection sqlcon = new SqlConnection(_connectionString);
-            return sqlcon;
-        }
 
-        private int insertData<T>(SqlConnection sqlcon, SqlTransaction sqltrans, T model, String query)
+
+        private async Task<int> insertData<T>(SqlConnection sqlcon, SqlTransaction sqltrans, T model, String query)
         {
-            int result = 0;
-            SqlCommand sqlcmd = null;
+            int result;
+            using SqlCommand sqlcmd = new SqlCommand(query, sqlcon, sqltrans);
             try
-            {
-                sqlcmd = new SqlCommand(query, sqlcon, sqltrans);
+            {            
                 foreach (var x in model.GetType().GetProperties())
                 {
                     sqlcmd.Parameters.AddWithValue("@" + x.Name, x.GetValue(model, null));
                 }
-                result = sqlcmd.ExecuteNonQuery();
+                result = await sqlcmd.ExecuteNonQueryAsync();
             }
             catch (Exception e)
             {
                 throw;
-            }
-            finally
-            {
-                sqlcmd.Dispose();
             }
             return result;
         }
@@ -252,15 +238,15 @@ namespace DataAccessLayer.DatabaseConnection
          * Get Account ID
          *
          */
-        private int getAccountID(SqlConnection sqlcon, SqlTransaction sqltrans, string email)
+        private async Task<int> getAccountID(SqlConnection sqlcon, SqlTransaction sqltrans, string email)
         {
             using SqlCommand sqlcmd = new SqlCommand(QueryConst.GetAccountIDByEmailCMD, sqlcon, sqltrans);
             try
             {
                 sqlcmd.Parameters.AddWithValue("@Email", email);
-                using SqlDataReader reader = sqlcmd.ExecuteReader();
+                using SqlDataReader reader = await sqlcmd.ExecuteReaderAsync();
                 int id = 0;
-                while (reader.Read())
+                while (await reader.ReadAsync())
                 {
                     id = (int)reader["AccountID"];
                 }
@@ -275,20 +261,14 @@ namespace DataAccessLayer.DatabaseConnection
         /*
          * verify Login information
          */
-        private bool verifyLogin(LoginInput loginInput)
+        private async Task<bool> verifyLogin(LoginInput loginInput)
         {
             Account account = new Account();
-            //check if email exist
-            if (!isExist(loginInput.Email))
-            {
-                return false;
-            }
 
             //Establish DBConnection
-            var sqlcon = establishSqlConnection();
-
-            SqlCommand getHashcmd = new SqlCommand(QueryConst.GetAccountHashCMD, sqlcon);
-            SqlCommand getKeycmd = new SqlCommand(QueryConst.GetAccountKeyCMD, sqlcon);
+            using SqlConnection sqlcon = new SqlConnection(_connectionString);
+            using SqlCommand getHashcmd = new SqlCommand(QueryConst.GetAccountHashCMD, sqlcon);
+            using SqlCommand getKeycmd = new SqlCommand(QueryConst.GetAccountKeyCMD, sqlcon);
 
             try
             {
@@ -296,9 +276,9 @@ namespace DataAccessLayer.DatabaseConnection
                 getHashcmd.Parameters.AddWithValue("@Email", loginInput.Email);
 
                 //get password from database
-                using (SqlDataReader reader = getHashcmd.ExecuteReader())
+                using (SqlDataReader reader = await getHashcmd.ExecuteReaderAsync())
                 {
-                    while (reader.Read())
+                    while (await reader.ReadAsync())
                     {
                         account.AccountID = (int)reader["AccountID"];
                         account.PasswordHash = (byte[])reader["PasswordHash"];
@@ -308,24 +288,18 @@ namespace DataAccessLayer.DatabaseConnection
 
                 //get Aes key from Access database     
                 getKeycmd.Parameters.AddWithValue("@AccountID", account.AccountID);
-                using (SqlDataReader accessReader = getKeycmd.ExecuteReader())
+                using (SqlDataReader accessReader = await getKeycmd.ExecuteReaderAsync())
                 {
-                    while (accessReader.Read())
+                    while (await accessReader.ReadAsync())
                     {
                         account.AesKey = (byte[])accessReader["AesKey"];
                     }
                 }
-                return hashCompare(account.PasswordHash, _cryptoProcess.Encrypt_Aes_With_Key_IV(loginInput.Password, account.AesKey, account.AesIV));
+                return hashCompare(account.PasswordHash, await _cryptoProcess.Encrypt_Aes_With_Key_IV(loginInput.Password, account.AesKey, account.AesIV));
             }
             catch (Exception e)
             {
                 throw;
-            }
-            finally
-            {
-                getHashcmd.Dispose();
-                getKeycmd.Dispose();
-                sqlcon.Close();
             }
         }
 
@@ -350,16 +324,16 @@ namespace DataAccessLayer.DatabaseConnection
         /*
          * check if email exist
          */
-        private bool isExist(string email)
+        private async Task<bool> isExist(string email)
         {
-            using SqlConnection sqlcon = establishSqlConnection();
+            using SqlConnection sqlcon = new SqlConnection(_connectionString);
             using SqlCommand sqlcmd = new SqlCommand(QueryConst.GetAccountIDByEmailCMD, sqlcon);
             try
             {
                 sqlcon.Open();
                 sqlcmd.Parameters.AddWithValue("@Email", email);
-                using SqlDataReader reader = sqlcmd.ExecuteReader();
-                return reader.Read();
+                using SqlDataReader reader = await sqlcmd.ExecuteReaderAsync();
+                return await reader.ReadAsync();
             }
             catch (Exception e)
             {
@@ -367,18 +341,18 @@ namespace DataAccessLayer.DatabaseConnection
             }
         }
 
-        private int getAccountStatus(string email)
+        private async Task<int> getAccountStatus(string email)
         {
             int status = 0;
-            using SqlConnection sqlcon = establishSqlConnection();
+            using SqlConnection sqlcon = new SqlConnection(_connectionString);
             using SqlCommand sqlcmd = new SqlCommand(QueryConst.GetAccountStatusByEmailCMD, sqlcon);
             try
             {
                 sqlcon.Open();
                 sqlcmd.Parameters.AddWithValue("@Email", email);
-                using (SqlDataReader reader = sqlcmd.ExecuteReader())
+                using (SqlDataReader reader = await sqlcmd.ExecuteReaderAsync())
                 {
-                    while (reader.Read())
+                    while (await reader.ReadAsync())
                         status = (int)reader["AccountStatus"];
                 }
                 return status;
@@ -390,36 +364,25 @@ namespace DataAccessLayer.DatabaseConnection
         }
 
 
-        private bool verifyToken(string email, string token)
+        private async Task<bool> verifyToken(string email, string token)
         {
-
-            var sqlcon = establishSqlConnection();
-            SqlCommand sqlcmd = null;
-
+            using SqlConnection sqlcon = new SqlConnection(_connectionString);
+            using SqlCommand sqlcmd = new SqlCommand(QueryConst.VerifyTokenCMD, sqlcon);
             try
             {
-                sqlcon.Open();
-                sqlcmd = new SqlCommand(QueryConst.VerifyTokenCMD, sqlcon);
+                sqlcon.Open();              
                 sqlcmd.Parameters.AddWithValue("@Email", email);
                 sqlcmd.Parameters.AddWithValue("@Token", token);
-
-                using (SqlDataReader reader = sqlcmd.ExecuteReader())
+                using SqlDataReader reader = await sqlcmd.ExecuteReaderAsync();              
+                while (await reader.ReadAsync())
                 {
-                    while (reader.Read())
-                    {
-                        return (string)reader["Email"] == email && (string)reader["Token"] == token;
-                    }
-                }
+                    return (string)reader["Email"] == email && (string)reader["Token"] == token;
+                }             
                 return false;
             }
             catch (Exception e)
             {
                 throw;
-            }
-            finally
-            {
-                sqlcmd.Dispose();
-                sqlcon.Close();
             }
         }
 

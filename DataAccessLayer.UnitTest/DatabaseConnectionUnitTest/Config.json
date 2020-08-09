@@ -1,0 +1,3 @@
+{
+    "TestConnection": "Server=.\\SQLEXPRESS; Database=TestRocketFreeMarket; Trusted_Connection=True;"
+}

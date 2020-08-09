@@ -35,18 +35,18 @@ namespace RocketFreeMarketAPI.Controllers
 
         // GetAccountInfo <AccountsController>/test@test.com
         [HttpGet("{email}")]
-        public Account GetAccountInfo([FromRoute] string email)
+        public async Task<Account> GetAccountInfo([FromRoute] string email)
         {
             try
             {
-                Account account = _conn.GetAccountInfo(email);
+                Account account = await _conn.GetAccountInfo(email);
                 if (account.AccountID == 0)
                 {
                     return null;
                 }
                 return account;
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 throw;
             }
@@ -54,41 +54,33 @@ namespace RocketFreeMarketAPI.Controllers
 
         //Login <AccountsController>/login
         [HttpPost("login")]
-        public HttpStatusCode Login([FromBody] LoginInput loginInput)
+        public async Task<int> Login([FromBody] LoginInput loginInput)
         {
             try
             {
-                bool Verified = _conn.Login(loginInput);
-
-                if (Verified)
-                {
-                    return HttpStatusCode.OK;
-                }
+                return await _conn.Login(loginInput);
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 throw;
             }
-            return HttpStatusCode.BadRequest;
         }
 
         // Register <AccountsController>/register
         [HttpPost("register")]
-        public HttpStatusCode Register([FromBody] RegisterInput registerInput)
+        public async Task<HttpStatusCode> Register([FromBody] RegisterInput registerInput)
         {
             HttpStatusCode status = HttpStatusCode.BadRequest;
             try
             {
-                bool isDone = _conn.Register(registerInput);
-
+                bool isDone = await _conn.Register(registerInput);
                 if (isDone)
                 {
                     status = HttpStatusCode.Created;
-
-                    _emailSender.ExecuteSender(registerInput.Email);
+                    await _emailSender.ExecuteSender(registerInput.Email);
                 }
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 throw;
             }
@@ -96,12 +88,12 @@ namespace RocketFreeMarketAPI.Controllers
         }
 
         [HttpGet("ConfirmEmail")]
-        public HttpStatusCode ConfirmEmail(string e, string t)
+        public async Task<HttpStatusCode> ConfirmEmail(string e, string t)
         {
             // e == email, t == token
             try
             {
-                if (e == null || t == null || _conn.ActivateAccount(e, t) == false)
+                if (e == null || t == null || await _conn.ActivateAccount(e, t) == false)
                     return HttpStatusCode.Unauthorized;
             }
             catch

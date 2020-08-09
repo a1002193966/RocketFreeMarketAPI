@@ -11,6 +11,7 @@ using System.Net;
 using System.Net.Mail;
 using System.Security.Cryptography;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace DataAccessLayer.EmailSender
 {
@@ -24,13 +25,13 @@ namespace DataAccessLayer.EmailSender
             _connectionString = configuration.GetConnectionString("DefaultConnection");
         }
 
-        public bool ExecuteSender(string email)
+        public async Task<bool> ExecuteSender(string email)
         {
             try
             {
                 string token = generateToken(email);
-                int result = saveToken(email, token);
-                sendEmailConfirmation(email, token);
+                int result = await saveToken(email, token);
+                await sendEmailConfirmation(email, token);
                 return result > 0;
             }
             catch (Exception)
@@ -42,45 +43,43 @@ namespace DataAccessLayer.EmailSender
 
         #region Private Help Functions
 
-        private void sendEmailConfirmation(string email, string token)
+        private async Task sendEmailConfirmation(string email, string token)
         {
-            using (MailMessage mail = new MailMessage())
+            using MailMessage mail = new MailMessage();
+            using SmtpClient smtp = new SmtpClient();
+            SmtpPackage smtpPackage;
+            using (StreamReader file = File.OpenText(@"..\DataAccessLayer\EmailSender\SmtpPackage.json"))
             {
-                using (SmtpClient smtp = new SmtpClient())
-                {
-                    SmtpPackage smtpPackage;
-                    using (StreamReader file = File.OpenText(@"..\DataAccessLayer\EmailSender\SmtpPackage.json"))
-                    {
-                        JsonSerializer deserializer = new JsonSerializer();
-                        smtpPackage = (SmtpPackage)deserializer.Deserialize(file, typeof(SmtpPackage));
-                    }
-
-                    mail.From = new MailAddress(_cryptoProcess.Decrypt_Aes(smtpPackage.UsernamePackage));
-                    mail.To.Add(email);
-                    mail.IsBodyHtml = true;
-                    mail.Subject = "Rocket Free Market Email Confirmation";
-                    mail.Body = string.Format(smtpPackage.EmailBody, string.Format(smtpPackage.ConfirmationLink, _cryptoProcess.EncodeText(email), token));
-                    
-                    smtp.Host = smtpPackage.Host;
-                    smtp.Port = smtpPackage.Port;
-                    smtp.Credentials = new NetworkCredential(_cryptoProcess.Decrypt_Aes(smtpPackage.UsernamePackage), _cryptoProcess.Decrypt_Aes(smtpPackage.PasswordPackage));
-                    smtp.EnableSsl = true;
-                    smtp.Send(mail);
-                }
+                JsonSerializer deserializer = new JsonSerializer();
+                smtpPackage = (SmtpPackage)deserializer.Deserialize(file, typeof(SmtpPackage));
             }
+
+            mail.From = new MailAddress(await _cryptoProcess.Decrypt_Aes(smtpPackage.UsernamePackage));
+            mail.To.Add(email);
+            mail.IsBodyHtml = true;
+            mail.Subject = "Rocket Free Market Email Confirmation";
+            mail.Body = string.Format(smtpPackage.EmailBody, string.Format(smtpPackage.ConfirmationLink, _cryptoProcess.EncodeText(email), token));
+
+            smtp.Host = smtpPackage.Host;
+            smtp.Port = smtpPackage.Port;
+            smtp.Credentials = new NetworkCredential(await _cryptoProcess.Decrypt_Aes(smtpPackage.UsernamePackage), await _cryptoProcess.Decrypt_Aes(smtpPackage.PasswordPackage));
+            smtp.EnableSsl = true;
+            await smtp.SendMailAsync(mail);
         }
 
  
-        private int saveToken(string email, string token)
+        private async Task<int> saveToken(string email, string token)
         {
             using SqlConnection sqlcon = new SqlConnection(_connectionString);
             sqlcon.Open();
             string cmd = "SP_UPDATE_TOKEN";
-            using SqlCommand sqlcmd = new SqlCommand(cmd, sqlcon);
-            sqlcmd.CommandType = CommandType.StoredProcedure;
+            using SqlCommand sqlcmd = new SqlCommand(cmd, sqlcon)
+            {
+                CommandType = CommandType.StoredProcedure
+            };
             sqlcmd.Parameters.AddWithValue("@Email", email);
             sqlcmd.Parameters.AddWithValue("@Token", token);
-            int result = sqlcmd.ExecuteNonQuery();
+            int result = await sqlcmd.ExecuteNonQueryAsync();
             return result;
         }
 
