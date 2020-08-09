@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using DataAccessLayer.Infrastructure;
 using DTO;
+using Entities;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
 
@@ -21,6 +22,21 @@ namespace RocketFreeMarketAPI.Controllers
         {
             _conn = conn;
         }
+
+        //GET <UserController>/{email}
+        [HttpGet("{email}")]
+        public User GetProfile([FromRoute]string email)
+        {
+            try
+            {
+                return _conn.GetProfile(email);
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
 
         // PUT <UsersController>
         [HttpPut("UpdateProfile")]

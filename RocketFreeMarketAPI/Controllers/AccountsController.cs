@@ -54,22 +54,16 @@ namespace RocketFreeMarketAPI.Controllers
 
         //Login <AccountsController>/login
         [HttpPost("login")]
-        public HttpStatusCode Login([FromBody] LoginInput loginInput)
+        public int Login([FromBody] LoginInput loginInput)
         {
             try
             {
-                bool Verified = _conn.Login(loginInput);
-
-                if (Verified)
-                {
-                    return HttpStatusCode.OK;
-                }
+                return _conn.Login(loginInput);
             }
             catch (Exception e)
             {
                 throw;
             }
-            return HttpStatusCode.BadRequest;
         }
 
         // Register <AccountsController>/register

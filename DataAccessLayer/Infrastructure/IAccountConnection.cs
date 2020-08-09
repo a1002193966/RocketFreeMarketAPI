@@ -9,7 +9,7 @@ namespace DataAccessLayer.Infrastructure
     public interface IAccountConnection
     {
         bool Register(RegisterInput registerInput);
-        bool Login(LoginInput loginInput);
+        int Login(LoginInput loginInput);
         Account GetAccountInfo(string email);
         bool ActivateAccount(string email, string token);
     }

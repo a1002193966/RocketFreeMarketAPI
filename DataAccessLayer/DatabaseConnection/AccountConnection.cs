@@ -6,6 +6,7 @@ using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
+using System.Reflection.Metadata.Ecma335;
 using System.Text;
 
 namespace DataAccessLayer.DatabaseConnection
@@ -116,9 +117,21 @@ namespace DataAccessLayer.DatabaseConnection
         }
 
 
-        public bool Login(LoginInput loginInput)
+        public int Login(LoginInput loginInput)
         {
-            return verifyLogin(loginInput);
+            try
+            {
+                if (!isExist(loginInput.Email))
+                {
+                    return -9;
+                }
+                int status = getAccountStatus(loginInput.Email);
+                return status == 1 ? verifyLogin(loginInput) ? 200 : 401 : status;
+            }
+            catch (Exception)
+            {
+                throw;
+            }
         }
 
 
@@ -276,17 +289,11 @@ namespace DataAccessLayer.DatabaseConnection
         private bool verifyLogin(LoginInput loginInput)
         {
             Account account = new Account();
-            //check if email exist
-            if (!isExist(loginInput.Email))
-            {
-                return false;
-            }
-
+           
             //Establish DBConnection
-            var sqlcon = establishSqlConnection();
-
-            SqlCommand getHashcmd = new SqlCommand(QueryConst.GetAccountHashCMD, sqlcon);
-            SqlCommand getKeycmd = new SqlCommand(QueryConst.GetAccountKeyCMD, sqlcon);
+            using SqlConnection sqlcon = establishSqlConnection();
+            using SqlCommand getHashcmd = new SqlCommand(QueryConst.GetAccountHashCMD, sqlcon);
+            using SqlCommand getKeycmd = new SqlCommand(QueryConst.GetAccountKeyCMD, sqlcon);
 
             try
             {
@@ -318,12 +325,6 @@ namespace DataAccessLayer.DatabaseConnection
             catch (Exception e)
             {
                 throw;
-            }
-            finally
-            {
-                getHashcmd.Dispose();
-                getKeycmd.Dispose();
-                sqlcon.Close();
             }
         }
 
