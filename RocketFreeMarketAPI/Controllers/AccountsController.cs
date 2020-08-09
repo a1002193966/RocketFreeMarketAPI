@@ -77,7 +77,7 @@ namespace RocketFreeMarketAPI.Controllers
                 if (isDone)
                 {
                     status = HttpStatusCode.Created;
-                    _emailSender.ExecuteSender(registerInput.Email);
+                    await _emailSender.ExecuteSender(registerInput.Email);
                 }
             }
             catch (Exception)

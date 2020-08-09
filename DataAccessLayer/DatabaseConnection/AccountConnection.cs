@@ -52,7 +52,7 @@ namespace DataAccessLayer.DatabaseConnection
                 using SqlConnection sqlcon = new SqlConnection(_connectionString);
 
                 //Create Secrect Object
-                Secret secret = _cryptoProcess.Encrypt_Aes(registerInput.Password);
+                Secret secret = await _cryptoProcess.Encrypt_Aes(registerInput.Password);
 
                 //Creating Account              
                 AccountDTO accountDTO = new AccountDTO(registerInput, secret);
@@ -122,8 +122,9 @@ namespace DataAccessLayer.DatabaseConnection
                 {
                     return -9;
                 }
+                bool isCredentialMatch = await verifyLogin(loginInput);
                 int status = await getAccountStatus(loginInput.Email);
-                return status == 1 ? await verifyLogin(loginInput) ? 200 : 401 : status;
+                return isCredentialMatch ? status : -9;
             }
             catch (Exception)
             {
@@ -294,7 +295,7 @@ namespace DataAccessLayer.DatabaseConnection
                         account.AesKey = (byte[])accessReader["AesKey"];
                     }
                 }
-                return hashCompare(account.PasswordHash, _cryptoProcess.Encrypt_Aes_With_Key_IV(loginInput.Password, account.AesKey, account.AesIV));
+                return hashCompare(account.PasswordHash, await _cryptoProcess.Encrypt_Aes_With_Key_IV(loginInput.Password, account.AesKey, account.AesIV));
             }
             catch (Exception e)
             {

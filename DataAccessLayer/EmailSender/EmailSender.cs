@@ -54,7 +54,7 @@ namespace DataAccessLayer.EmailSender
                 smtpPackage = (SmtpPackage)deserializer.Deserialize(file, typeof(SmtpPackage));
             }
 
-            mail.From = new MailAddress(_cryptoProcess.Decrypt_Aes(smtpPackage.UsernamePackage));
+            mail.From = new MailAddress(await _cryptoProcess.Decrypt_Aes(smtpPackage.UsernamePackage));
             mail.To.Add(email);
             mail.IsBodyHtml = true;
             mail.Subject = "Rocket Free Market Email Confirmation";
@@ -62,7 +62,7 @@ namespace DataAccessLayer.EmailSender
 
             smtp.Host = smtpPackage.Host;
             smtp.Port = smtpPackage.Port;
-            smtp.Credentials = new NetworkCredential(_cryptoProcess.Decrypt_Aes(smtpPackage.UsernamePackage), _cryptoProcess.Decrypt_Aes(smtpPackage.PasswordPackage));
+            smtp.Credentials = new NetworkCredential(await _cryptoProcess.Decrypt_Aes(smtpPackage.UsernamePackage), await _cryptoProcess.Decrypt_Aes(smtpPackage.PasswordPackage));
             smtp.EnableSsl = true;
             await smtp.SendMailAsync(mail);
         }

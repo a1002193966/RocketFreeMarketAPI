@@ -6,12 +6,13 @@ using System.Collections.Generic;
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace DataAccessLayer.Cryptography
 {
     public class CryptoProcess : ICryptoProcess
     {
-        public Secret Encrypt_Aes(string password)
+        public async Task<Secret> Encrypt_Aes(string password)
         {
             Secret secret = new Secret();
 
@@ -20,22 +21,18 @@ namespace DataAccessLayer.Cryptography
                 secret.Key = aes.Key;
                 secret.IV = aes.IV;
                 ICryptoTransform encryptor = aes.CreateEncryptor(aes.Key, aes.IV);
-                using (MemoryStream ms = new MemoryStream())
+                using MemoryStream ms = new MemoryStream();
+                using CryptoStream cs = new CryptoStream(ms, encryptor, CryptoStreamMode.Write);
+                using (StreamWriter sw = new StreamWriter(cs))
                 {
-                    using (CryptoStream cs = new CryptoStream(ms, encryptor, CryptoStreamMode.Write))
-                    {
-                        using (StreamWriter sw = new StreamWriter(cs))
-                        {
-                            sw.Write(password);
-                        }
-                        secret.Cipher = ms.ToArray();
-                    }
+                    await sw.WriteAsync(password);
                 }
+                secret.Cipher = ms.ToArray();
             }
             return secret;
         }
 
-        public byte[] Encrypt_Aes_With_Key_IV(string password, byte[] key, byte[] IV)
+        public async Task<byte[]> Encrypt_Aes_With_Key_IV(string password, byte[] key, byte[] IV)
         {
             byte[] secret;
 
@@ -44,23 +41,19 @@ namespace DataAccessLayer.Cryptography
                 aes.Key = key;
                 aes.IV = IV;
                 ICryptoTransform encryptor = aes.CreateEncryptor(aes.Key, aes.IV);
-                using (MemoryStream ms = new MemoryStream())
+                using MemoryStream ms = new MemoryStream();
+                using CryptoStream cs = new CryptoStream(ms, encryptor, CryptoStreamMode.Write);
+                using (StreamWriter sw = new StreamWriter(cs))
                 {
-                    using (CryptoStream cs = new CryptoStream(ms, encryptor, CryptoStreamMode.Write))
-                    {
-                        using (StreamWriter sw = new StreamWriter(cs))
-                        {
-                            sw.Write(password);
-                        }
-                        secret = ms.ToArray();
-                    }
+                    await sw.WriteAsync(password);
                 }
+                secret = ms.ToArray();
             }
             return secret;
         }
 
 
-        public string Decrypt_Aes(Secret secret)
+        public async Task<string> Decrypt_Aes(Secret secret)
         {
             string password = null;
             using (Aes aes = Aes.Create())
@@ -68,16 +61,10 @@ namespace DataAccessLayer.Cryptography
                 aes.Key = secret.Key;
                 aes.IV = secret.IV;
                 ICryptoTransform decryptor = aes.CreateDecryptor(aes.Key, aes.IV);
-                using (MemoryStream ms = new MemoryStream(secret.Cipher))
-                {
-                    using (CryptoStream cs = new CryptoStream(ms, decryptor, CryptoStreamMode.Read))
-                    {
-                        using (StreamReader sr = new StreamReader(cs))
-                        {
-                            password = sr.ReadToEnd();
-                        }
-                    }
-                }
+                using MemoryStream ms = new MemoryStream(secret.Cipher);
+                using CryptoStream cs = new CryptoStream(ms, decryptor, CryptoStreamMode.Read);
+                using StreamReader sr = new StreamReader(cs);
+                password = await sr.ReadToEndAsync();
             }
             return password;
         }

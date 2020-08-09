@@ -9,6 +9,7 @@ using System.Configuration;
 using System.Data;
 using System.Data.SqlClient;
 using System.IO;
+using System.Threading.Tasks;
 
 namespace DataAccessLayerUnitTest.DatabaseConnection.UnitTest
 {
@@ -19,7 +20,7 @@ namespace DataAccessLayerUnitTest.DatabaseConnection.UnitTest
         private ConnectionDTO connection;
 
         [TestInitialize()]
-        public void Initialize()
+        public async Task Initialize()
         {
             using StreamReader file = File.OpenText(@"../../../DatabaseConnectionUnitTest/Config.json");
             JsonSerializer deserializer = new JsonSerializer();
@@ -31,13 +32,13 @@ namespace DataAccessLayerUnitTest.DatabaseConnection.UnitTest
             {
                 CommandType = CommandType.StoredProcedure
             };
-            sqlcmd.ExecuteNonQuery();
+            await sqlcmd.ExecuteNonQueryAsync();
             sqlcon.Close();
         }
 
 
         [TestMethod]
-        public void Register_NewAccount_ReturnTrue()
+        public async Task Register_NewAccount_ReturnTrue()
         {
             //Arrange
             RegisterInput registerInput = new RegisterInput()
@@ -50,14 +51,14 @@ namespace DataAccessLayerUnitTest.DatabaseConnection.UnitTest
             AccountConnection conn = new AccountConnection(cryptoProcess, _connectionString); 
 
             //Act
-            var result = conn.Register(registerInput);
+            var result = await conn.Register(registerInput);
             
             //Assert
             Assert.IsTrue(result);
         }
 
         [TestMethod]
-        public void Register_ExistingAccount_ReturnFalse()
+        public async Task Register_ExistingAccount_ReturnFalse()
         {
             //Arrange
             RegisterInput registerInput = new RegisterInput()
@@ -70,15 +71,15 @@ namespace DataAccessLayerUnitTest.DatabaseConnection.UnitTest
             AccountConnection conn = new AccountConnection(cryptoProcess, _connectionString);
 
             //Act
-            conn.Register(registerInput);
-            var result = conn.Register(registerInput);
+            await conn.Register(registerInput);
+            var result = await conn.Register(registerInput);
 
             //Assert
             Assert.IsFalse(result);
         }
 
         [TestMethod]
-        public void Login_WithCorrectEmailAndPassword_ReturnTrue()
+        public async Task Login_WithCorrectEmailAndPasswordAndNotEmailVerified_ReturnTrue()
         {
             //Arrange
             RegisterInput registerInput = new RegisterInput()
@@ -96,15 +97,15 @@ namespace DataAccessLayerUnitTest.DatabaseConnection.UnitTest
             AccountConnection conn = new AccountConnection(cryptoProcess, _connectionString);
 
             //Act
-            conn.Register(registerInput);
-            var result = conn.Login(loginInput);
+            await conn.Register(registerInput);
+            var result = await conn.Login(loginInput);
 
             //Assert
-            Assert.IsTrue(result);
+            Assert.AreEqual(0, result);
         }
 
         [TestMethod]
-        public void Login_WithCorrectEmailAndIncorrectPassword_ReturnFalse()
+        public async Task Login_WithCorrectEmailAndIncorrectPassword_ReturnTrue()
         {
             //Arrange
             RegisterInput registerInput = new RegisterInput()
@@ -122,23 +123,17 @@ namespace DataAccessLayerUnitTest.DatabaseConnection.UnitTest
             AccountConnection conn = new AccountConnection(cryptoProcess, _connectionString);
 
             //Act
-            conn.Register(registerInput);
-            var result = conn.Login(loginInput);
+            await conn.Register(registerInput);
+            var result = await conn.Login(loginInput);
 
             //Assert
-            Assert.IsFalse(result);
+            Assert.AreEqual(-9, result);
         }
 
         [TestMethod]
-        public void Login_WithIncorrectEmailAndCorrectPassword_ReturnFalse()
+        public async Task Login_WithNotRegisteredAccount_ReturnTrue()
         {
             //Arrange
-            RegisterInput registerInput = new RegisterInput()
-            {
-                Email = "chenfan0213@gmail.com",
-                Password = "qwerty",
-                PhoneNumber = "1234567890"
-            };
             LoginInput loginInput = new LoginInput()
             {
                 Email = "chenfan0213xxx@gmail.com",
@@ -148,37 +143,11 @@ namespace DataAccessLayerUnitTest.DatabaseConnection.UnitTest
             AccountConnection conn = new AccountConnection(cryptoProcess, _connectionString);
 
             //Act
-            conn.Register(registerInput);
-            var result = conn.Login(loginInput);
+            var result = await conn.Login(loginInput);
 
             //Assert
-            Assert.IsFalse(result);
-        }
-
-        [TestMethod]
-        public void Login_WithIncorrectEmailAndIncorrectPassword_ReturnFalse()
-        {
-            //Arrange
-            RegisterInput registerInput = new RegisterInput()
-            {
-                Email = "chenfan0213@gmail.com",
-                Password = "qwerty",
-                PhoneNumber = "1234567890"
-            };
-            LoginInput loginInput = new LoginInput()
-            {
-                Email = "chenfan0213xxx@gmail.com",
-                Password = "qwertyxxx"
-            };
-            CryptoProcess cryptoProcess = new CryptoProcess();
-            AccountConnection conn = new AccountConnection(cryptoProcess, _connectionString);
-
-            //Act
-            conn.Register(registerInput);
-            var result = conn.Login(loginInput);
-
-            //Assert
-            Assert.IsFalse(result);
-        }
+            Assert.AreEqual(-9, result);
+        }      
+        
     }
 }
