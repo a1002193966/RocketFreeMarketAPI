@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace DataAccessLayer.DatabaseConnection
 {
@@ -20,7 +21,7 @@ namespace DataAccessLayer.DatabaseConnection
         }
 
 
-        public User GetProfile(string email)
+        public async Task<User> GetProfile(string email)
         {
             User user = new User();
             using SqlConnection sqlcon = new SqlConnection(_connectionString);
@@ -30,13 +31,13 @@ namespace DataAccessLayer.DatabaseConnection
             {
                 sqlcon.Open();
                 sqlcmd.Parameters.AddWithValue("@Email", email);
-                using SqlDataReader reader = sqlcmd.ExecuteReader();
+                using SqlDataReader reader = await sqlcmd.ExecuteReaderAsync();
                 while (reader.Read())
                 {
                     user.UserID = (int)reader["UserID"];
-                    user.FirstName = (string)reader["FirstName"];
-                    user.LastName = (string)reader["LastName"];
-                    user.DOB = (DateTime)reader["DOB"];
+                    _ = reader["FirstName"] != DBNull.Value ? user.FirstName = (string)reader["FirstName"] : user.FirstName = null;
+                    _ = reader["LastName"] != DBNull.Value ? user.LastName = (string)reader["LastName"] : user.LastName = null;
+                    _ = reader["DOB"] != DBNull.Value ? user.DOB = (DateTime)reader["DOB"] : user.DOB = null;
                     user.AccountID = (int)reader["AccountID"];
                     user.UpdateID = (int)reader["UpdateID"];
                     user.UpdateDate = (DateTime)reader["UpdateDate"];
@@ -51,7 +52,7 @@ namespace DataAccessLayer.DatabaseConnection
 
 
 
-        public bool UpdateProfile(ProfileDTO profile)
+        public async Task<bool> UpdateProfile(ProfileDTO profile)
         {
             using SqlConnection sqlcon = new SqlConnection(_connectionString);
             string cmd = "UPDATE [User] SET FirstName = @FirstName, LastName = @LastName, DOB = @DOB, UpdateDate = GETDATE() WHERE AccountID = @AccountID";
@@ -63,10 +64,10 @@ namespace DataAccessLayer.DatabaseConnection
                 sqlcmd.Parameters.AddWithValue("@LastName", profile.LastName);
                 sqlcmd.Parameters.AddWithValue("@DOB", profile.DOB);
                 sqlcmd.Parameters.AddWithValue("@AccountID", profile.AccountID);
-                int result = sqlcmd.ExecuteNonQuery();
+                int result = await sqlcmd.ExecuteNonQueryAsync();
                 return result > 0;
             }
-            catch(Exception e)
+            catch(Exception)
             {
                 throw;
             }

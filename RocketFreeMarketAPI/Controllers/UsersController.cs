@@ -25,11 +25,11 @@ namespace RocketFreeMarketAPI.Controllers
 
         //GET <UserController>/{email}
         [HttpGet("{email}")]
-        public User GetProfile([FromRoute]string email)
+        public async Task<User> GetProfile([FromRoute]string email)
         {
             try
             {
-                return _conn.GetProfile(email);
+                return await _conn.GetProfile(email);
             }
             catch (Exception)
             {
@@ -40,13 +40,13 @@ namespace RocketFreeMarketAPI.Controllers
 
         // PUT <UsersController>
         [HttpPut("UpdateProfile")]
-        public bool UpdateProfile([FromBody]ProfileDTO profile)
+        public async Task<bool> UpdateProfile([FromBody]ProfileDTO profile)
         {
             try
             {
-                return _conn.UpdateProfile(profile);
+                return await _conn.UpdateProfile(profile);
             }
-            catch(Exception e)
+            catch(Exception)
             {
                 throw;
             }

@@ -3,14 +3,15 @@ using Entities;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace DataAccessLayer.Infrastructure
 {
     public interface IAccountConnection
     {
-        bool Register(RegisterInput registerInput);
-        int Login(LoginInput loginInput);
-        Account GetAccountInfo(string email);
-        bool ActivateAccount(string email, string token);
+        Task<bool> Register(RegisterInput registerInput);
+        Task<int> Login(LoginInput loginInput);
+        Task<Account> GetAccountInfo(string email);
+        Task<bool> ActivateAccount(string email, string token);
     }
 }
