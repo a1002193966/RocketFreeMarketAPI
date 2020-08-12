@@ -7,6 +7,7 @@ namespace Entities
         public int AccountID { get; set; }
         public string PhoneNumber { get; set; }
         public string Email { get; set; }
+        public string NormalizedEmail { get; set; }
         public byte[] PasswordHash { get; set; }
         public byte[] AesKey { get; set; }
         public byte[] AesIV { get; set; }

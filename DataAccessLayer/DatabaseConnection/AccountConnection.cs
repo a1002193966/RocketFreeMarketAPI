@@ -43,7 +43,7 @@ namespace DataAccessLayer.DatabaseConnection
         public async Task<bool> Register(RegisterInput registerInput)
         {
             //check if email is already existed.
-            if (!await isExist(registerInput.Email))
+            if (!await isExist(registerInput.Email.ToUpper()))
             {
                 //SQL Transaction set to null
                 SqlTransaction sqltrans = null;
@@ -69,7 +69,7 @@ namespace DataAccessLayer.DatabaseConnection
                     int accountInsertResult = await insertData(sqlcon, sqltrans, accountDTO, QueryConst.AccountInsertCMD);
 
                     //if inserted, get the AccountID
-                    int accountID = await getAccountID(sqlcon, sqltrans, registerInput.Email);
+                    int accountID = await getAccountID(sqlcon, sqltrans, registerInput.Email.ToUpper());
 
                     UserDTO userDTO = new UserDTO()
                     {
@@ -118,12 +118,12 @@ namespace DataAccessLayer.DatabaseConnection
         {
             try
             {
-                if (!await isExist(loginInput.Email))
+                if (!await isExist(loginInput.Email.ToUpper()))
                 {
                     return -9;
                 }
                 bool isCredentialMatch = await verifyLogin(loginInput);
-                int status = await getAccountStatus(loginInput.Email);
+                int status = await getAccountStatus(loginInput.Email.ToUpper());
                 return isCredentialMatch ? status : -9;
             }
             catch (Exception)
@@ -140,7 +140,7 @@ namespace DataAccessLayer.DatabaseConnection
         public async Task<Account> GetAccountInfo(string email)
         {
             Account account = new Account();
-
+           
             //Establish DBConnection
             using SqlConnection sqlcon = new SqlConnection(_connectionString);
             using SqlCommand getAccInfocCmd = new SqlCommand(QueryConst.GetAccountInfoByEmailCMD, sqlcon);
@@ -148,7 +148,7 @@ namespace DataAccessLayer.DatabaseConnection
             try
             {
                 sqlcon.Open();
-                getAccInfocCmd.Parameters.AddWithValue("@Email", email);
+                getAccInfocCmd.Parameters.AddWithValue("@NormalizedEmail", email.ToUpper());
 
                 //Get Account infromation from database
                 using (SqlDataReader reader = await getAccInfocCmd.ExecuteReaderAsync())
@@ -158,6 +158,7 @@ namespace DataAccessLayer.DatabaseConnection
                         account.AccountID = (int)reader["AccountID"];
                         account.PhoneNumber = (string)reader["PhoneNumber"];
                         account.Email = (string)reader["Email"];
+                        account.NormalizedEmail = (string)reader["NormalizedEmail"];
                         account.PasswordHash = (byte[])reader["PasswordHash"];
                         account.AesIV = (byte[])reader["AesIV"];
                         account.CreationDate = (DateTime)reader["CreationDate"];
@@ -187,11 +188,11 @@ namespace DataAccessLayer.DatabaseConnection
         }
 
         
-        public async Task<bool> ActivateAccount(string email, string token)
+        public async Task<bool> ActivateAccount(string encryptedEmail, string token)
         {
             int result = 0;
-            string emailDecrypted = _cryptoProcess.DecodeHash(email);
-            bool isMatch = await verifyToken(emailDecrypted, token);
+            string decryptedEmail = _cryptoProcess.DecodeHash(encryptedEmail).ToUpper();
+            bool isMatch = await verifyToken(decryptedEmail, token);
             if (isMatch)
             {
                 using SqlConnection sqlcon = new SqlConnection(_connectionString);
@@ -199,7 +200,7 @@ namespace DataAccessLayer.DatabaseConnection
                 try
                 {
                     sqlcon.Open();
-                    sqlcmd.Parameters.AddWithValue("@Email", emailDecrypted);
+                    sqlcmd.Parameters.AddWithValue("@NormalizedEmail", decryptedEmail);
                     result = await sqlcmd.ExecuteNonQueryAsync();
                 }
                 catch (Exception e)
@@ -243,7 +244,7 @@ namespace DataAccessLayer.DatabaseConnection
             using SqlCommand sqlcmd = new SqlCommand(QueryConst.GetAccountIDByEmailCMD, sqlcon, sqltrans);
             try
             {
-                sqlcmd.Parameters.AddWithValue("@Email", email);
+                sqlcmd.Parameters.AddWithValue("@NormalizedEmail", email.ToUpper());
                 using SqlDataReader reader = await sqlcmd.ExecuteReaderAsync();
                 int id = 0;
                 while (await reader.ReadAsync())
@@ -273,7 +274,7 @@ namespace DataAccessLayer.DatabaseConnection
             try
             {
                 sqlcon.Open();
-                getHashcmd.Parameters.AddWithValue("@Email", loginInput.Email);
+                getHashcmd.Parameters.AddWithValue("@NormalizedEmail", loginInput.Email.ToUpper());
 
                 //get password from database
                 using (SqlDataReader reader = await getHashcmd.ExecuteReaderAsync())
@@ -331,7 +332,7 @@ namespace DataAccessLayer.DatabaseConnection
             try
             {
                 sqlcon.Open();
-                sqlcmd.Parameters.AddWithValue("@Email", email);
+                sqlcmd.Parameters.AddWithValue("@NormalizedEmail", email.ToUpper());
                 using SqlDataReader reader = await sqlcmd.ExecuteReaderAsync();
                 return await reader.ReadAsync();
             }
@@ -349,7 +350,7 @@ namespace DataAccessLayer.DatabaseConnection
             try
             {
                 sqlcon.Open();
-                sqlcmd.Parameters.AddWithValue("@Email", email);
+                sqlcmd.Parameters.AddWithValue("@NormalizedEmail", email.ToUpper());
                 using (SqlDataReader reader = await sqlcmd.ExecuteReaderAsync())
                 {
                     while (await reader.ReadAsync())
@@ -371,12 +372,12 @@ namespace DataAccessLayer.DatabaseConnection
             try
             {
                 sqlcon.Open();              
-                sqlcmd.Parameters.AddWithValue("@Email", email);
+                sqlcmd.Parameters.AddWithValue("@Email", email.ToUpper());
                 sqlcmd.Parameters.AddWithValue("@Token", token);
                 using SqlDataReader reader = await sqlcmd.ExecuteReaderAsync();              
                 while (await reader.ReadAsync())
                 {
-                    return (string)reader["Email"] == email && (string)reader["Token"] == token;
+                    return (string)reader["Email"] == email.ToUpper() && (string)reader["Token"] == token;
                 }             
                 return false;
             }

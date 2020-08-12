@@ -23,15 +23,12 @@ namespace RocketFreeMarketAPI.Controllers
         private readonly IAccountConnection _conn;
         private readonly IEmailSender _emailSender;
 
-
         public AccountsController(IAccountConnection conn, IEmailSender emailSender)
         {
             _conn = conn;
             _emailSender = emailSender;
 
         }
-
-        
 
         // GetAccountInfo <AccountsController>/test@test.com
         [HttpGet("{email}")]
@@ -102,7 +99,6 @@ namespace RocketFreeMarketAPI.Controllers
             }
             return HttpStatusCode.OK;
         }
-
 
     }
 }
