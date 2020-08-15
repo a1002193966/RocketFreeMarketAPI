@@ -77,7 +77,7 @@ namespace DataAccessLayer.EmailSender
             {
                 CommandType = CommandType.StoredProcedure
             };
-            sqlcmd.Parameters.AddWithValue("@Email", email);
+            sqlcmd.Parameters.AddWithValue("@Email", email.ToUpper());
             sqlcmd.Parameters.AddWithValue("@Token", token);
             int result = await sqlcmd.ExecuteNonQueryAsync();
             return result;
@@ -88,7 +88,7 @@ namespace DataAccessLayer.EmailSender
             string token = null;
             using (SHA512 algorithm = SHA512.Create())
             {
-                byte[] hashedBytes = algorithm.ComputeHash(Encoding.UTF32.GetBytes(email + DateTime.Now.ToString()));
+                byte[] hashedBytes = algorithm.ComputeHash(Encoding.UTF32.GetBytes(email.ToUpper() + DateTime.Now.ToString()));
                 token = BitConverter.ToString(hashedBytes).Replace("-", "");
             }
             return token;

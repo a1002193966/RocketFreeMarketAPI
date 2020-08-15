@@ -1,12 +1,10 @@
 ﻿using DataAccessLayer.Cryptography;
 using DataAccessLayer.DatabaseConnection;
-using DataAccessLayer.UnitTest.DatabaseConnectionUnitTest;
 using DTO;
-using Microsoft.Extensions.Configuration;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Newtonsoft.Json;
 using System;
-using System.Configuration;
+using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
 using System.IO;
@@ -18,7 +16,6 @@ namespace DataAccessLayerUnitTest.DatabaseConnection.UnitTest
     public class AccountConnectionTest
     {
         private string _connectionString;
-        private ConnectionDTO connection;
 
         private async Task<bool> changeStatus(int status, string email)
         {
@@ -44,18 +41,20 @@ namespace DataAccessLayerUnitTest.DatabaseConnection.UnitTest
         [TestInitialize()]
         public async Task Initialize()
         {
-            using StreamReader file = File.OpenText(@"../../../DatabaseConnectionUnitTest/Config.json");
-            JsonSerializer deserializer = new JsonSerializer();
-            connection = (ConnectionDTO)deserializer.Deserialize(file, typeof(ConnectionDTO));
-            _connectionString = connection.TestConnection;
+            string jsonText = await File.ReadAllTextAsync(@"../../../DatabaseConnectionUnitTest/config.json");
+            Dictionary<string, string> conn = JsonConvert.DeserializeObject<Dictionary<string, string>>(jsonText);
+            _connectionString = conn["TestConnection"];
             using SqlConnection sqlcon = new SqlConnection(_connectionString);
-            sqlcon.Open();
-            using SqlCommand sqlcmd = new SqlCommand("SP_TRUNCATE_TABLE", sqlcon)
+            using SqlCommand sqlcmd = new SqlCommand("SP_TRUNCATE_TABLE", sqlcon) { CommandType = CommandType.StoredProcedure };
+            try
             {
-                CommandType = CommandType.StoredProcedure
-            };
-            await sqlcmd.ExecuteNonQueryAsync();
-            sqlcon.Close();
+                sqlcon.Open();
+                await sqlcmd.ExecuteNonQueryAsync();
+            }
+            catch(Exception e)
+            {
+                throw;
+            }
         }
 
 

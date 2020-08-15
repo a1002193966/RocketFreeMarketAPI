@@ -25,12 +25,12 @@ namespace DataAccessLayer.DatabaseConnection
         {
             User user = new User();
             using SqlConnection sqlcon = new SqlConnection(_connectionString);
-            string cmd = "SELECT * FROM [User] WHERE AccountID = (SELECT AccountID FROM [Account] WHERE Email = @Email)";
+            string cmd = "SELECT * FROM [User] WHERE AccountID = (SELECT AccountID FROM [Account] WHERE NormalizedEmail = @NormalizedEmail)";
             using SqlCommand sqlcmd = new SqlCommand(cmd, sqlcon);
             try
             {
                 sqlcon.Open();
-                sqlcmd.Parameters.AddWithValue("@Email", email);
+                sqlcmd.Parameters.AddWithValue("@NormalizedEmail", email.ToUpper());
                 using SqlDataReader reader = await sqlcmd.ExecuteReaderAsync();
                 while (reader.Read())
                 {

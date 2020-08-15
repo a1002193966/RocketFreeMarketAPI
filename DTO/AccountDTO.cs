@@ -6,6 +6,7 @@ namespace DTO
     {
         public string PhoneNumber { get; set; }
         public string Email { get; set; }
+        public string NormalizedEmail => Email.ToUpper();
         public byte[] PasswordHash { get; set; }
         public byte[] AesIV { get; set; }
         public string AccountType { get; set; }
