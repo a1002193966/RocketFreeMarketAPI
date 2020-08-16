@@ -9,7 +9,7 @@ namespace DataAccessLayer.Infrastructure
 {
     public interface IAccountConnection
     {
-        Task<bool> Register(RegisterInput registerInput);
+        Task<int> Register(RegisterInput registerInput);
         Task<int> Login(LoginInput loginInput);
         Task<Account> GetAccountInfo(string email);
         Task<bool> ActivateAccount(string email, string token);

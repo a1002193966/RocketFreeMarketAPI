@@ -40,7 +40,7 @@ namespace DataAccessLayer.DatabaseConnection
          * if exist, return false
          */
 
-        public async Task<bool> Register(RegisterInput registerInput)
+        public async Task<int> Register(RegisterInput registerInput)
         {
             //check if email is already existed.
             if (!await isExist(registerInput.Email.ToUpper()))
@@ -93,24 +93,24 @@ namespace DataAccessLayer.DatabaseConnection
                     {
                         sqltrans.Commit();
                         //throw new Exception();
-                        return true;
+                        return 1;
                     }
                     else
                     {
                         //if User not inserted, rollback 
                         sqltrans.Rollback();
-                        return false;
+                        return -1;
                     }
                 }
                 catch (Exception e)
                 {
                     if (sqltrans != null)
                         sqltrans.Rollback();
-                    return false;
+                    return -1;
                 }
             }
             else
-                return false;
+                return 0;
         }
 
 

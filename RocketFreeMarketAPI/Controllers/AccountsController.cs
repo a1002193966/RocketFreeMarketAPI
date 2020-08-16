@@ -65,23 +65,20 @@ namespace RocketFreeMarketAPI.Controllers
 
         // Register <AccountsController>/register
         [HttpPost("register")]
-        public async Task<HttpStatusCode> Register([FromBody] RegisterInput registerInput)
+        public async Task<int> Register([FromBody] RegisterInput registerInput)
         {
-            HttpStatusCode status = HttpStatusCode.BadRequest;
+            int status = -1;
             try
             {
-                bool isDone = await _conn.Register(registerInput);
-                if (isDone)
-                {
-                    status = HttpStatusCode.Created;
+                status = await _conn.Register(registerInput);
+                if (status == 1)
                     await _emailSender.ExecuteSender(registerInput.Email);
-                }
+                return status;
             }
             catch (Exception)
             {
                 throw;
             }
-            return status;
         }
 
         [HttpGet("ConfirmEmail")]
