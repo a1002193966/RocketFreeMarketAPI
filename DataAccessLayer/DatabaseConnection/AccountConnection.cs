@@ -3,12 +3,16 @@ using DataAccessLayer.Infrastructure;
 using DTO;
 using Entities;
 using Microsoft.Extensions.Configuration;
+using Microsoft.IdentityModel.Tokens;
 using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
+using System.IdentityModel.Tokens.Jwt;
 using System.Reflection.Metadata.Ecma335;
+using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
+
 
 namespace DataAccessLayer.DatabaseConnection
 {
@@ -16,8 +20,14 @@ namespace DataAccessLayer.DatabaseConnection
     {
         private readonly ICryptoProcess _cryptoProcess;
         private readonly string _connectionString;
+        private IConfiguration _config;
 
-        
+        public AccountConnection(IConfiguration config)
+        {
+            _config = config;
+        }
+
+
         //Used for testing purpose.
         public AccountConnection(ICryptoProcess cryptoProcess, string connectionString)
         {
@@ -29,8 +39,9 @@ namespace DataAccessLayer.DatabaseConnection
         {
             _cryptoProcess = cryptoProcess;
             _connectionString = configuration.GetConnectionString("DefaultConnection");
-        }     
+        }
 
+        
         /*
          * Register new user
          * 
@@ -118,19 +129,24 @@ namespace DataAccessLayer.DatabaseConnection
         {
             try
             {
+
                 if (!await isExist(loginInput.Email.ToUpper()))
                 {
                     return -9;
                 }
                 bool isCredentialMatch = await verifyLogin(loginInput);
                 int status = await getAccountStatus(loginInput.Email.ToUpper());
+
                 return isCredentialMatch ? status : -9;
+                
             }
             catch (Exception)
             {
                 throw;
             }
         }
+
+
 
 
         /*
@@ -170,6 +186,8 @@ namespace DataAccessLayer.DatabaseConnection
                         account.AccountType = (string)reader["AccountType"];
                     }
                 }
+
+
                 //Assign Aes key from Access database to Account Class
                 getAccKeyCmd.Parameters.AddWithValue("@AccountID", account.AccountID);
                 using (SqlDataReader accessReader = await getAccKeyCmd.ExecuteReaderAsync())

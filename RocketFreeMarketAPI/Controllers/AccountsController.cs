@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Reflection.Metadata.Ecma335;
+using System.Security.Claims;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
 using DataAccessLayer.Infrastructure;
@@ -13,6 +14,7 @@ using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
+
 namespace RocketFreeMarketAPI.Controllers
 {
     [Route("[controller]")]
@@ -22,12 +24,13 @@ namespace RocketFreeMarketAPI.Controllers
     {
         private readonly IAccountConnection _conn;
         private readonly IEmailSender _emailSender;
+        private readonly ILoginToken _loginToken;
 
-        public AccountsController(IAccountConnection conn, IEmailSender emailSender)
+        public AccountsController(IAccountConnection conn, IEmailSender emailSender, ILoginToken loginToken)
         {
             _conn = conn;
             _emailSender = emailSender;
-
+            _loginToken = loginToken;
         }
 
         // GetAccountInfo <AccountsController>/test@test.com
@@ -48,14 +51,31 @@ namespace RocketFreeMarketAPI.Controllers
                 throw;
             }
         }
+        [Authorize]
+        [HttpPost("test")]
+        public string test()
+        {
+            var identity = HttpContext.User.Identity as ClaimsIdentity;
+            var cliam = identity.Claims.ToList();
+            var email = cliam[0].Value;
+            return "Hello " + email;
+        }
 
         //Login <AccountsController>/login
         [HttpPost("login")]
-        public async Task<int> Login([FromBody] LoginInput loginInput)
+        public async Task<IActionResult> Login([FromBody] LoginInput loginInput)
         {
-            try
-            {
-                return await _conn.Login(loginInput);
+
+            try{
+                var result = await _conn.Login(loginInput);
+                IActionResult response = Unauthorized();
+                if (result == 1)
+                {
+                    var tokenString = _loginToken.GenerateToken(loginInput);
+                    response = Ok(new { token = tokenString });
+                }
+                return response;
+
             }
             catch (Exception)
             {
