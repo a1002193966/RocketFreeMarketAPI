@@ -40,7 +40,7 @@ namespace RocketFreeMarketAPI.Controllers
             try
             {
                 Account account = await _conn.GetAccountInfo(email);
-                if (account.AccountID == 0)
+                if (account.AccountID == null)
                 {
                     return null;
                 }
@@ -51,22 +51,13 @@ namespace RocketFreeMarketAPI.Controllers
                 throw;
             }
         }
-        [Authorize]
-        [HttpPost("test")]
-        public string test()
-        {
-            var identity = HttpContext.User.Identity as ClaimsIdentity;
-            var cliam = identity.Claims.ToList();
-            var email = cliam[0].Value;
-            return "Hello " + email;
-        }
 
         //Login <AccountsController>/login
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginInput loginInput)
         {
-
-            try{
+            try
+            {
                 var result = await _conn.Login(loginInput);
                 IActionResult response = Unauthorized();
                 if (result == 1)
@@ -75,7 +66,6 @@ namespace RocketFreeMarketAPI.Controllers
                     response = Ok(new { token = tokenString });
                 }
                 return response;
-
             }
             catch (Exception)
             {
@@ -87,10 +77,9 @@ namespace RocketFreeMarketAPI.Controllers
         [HttpPost("register")]
         public async Task<int> Register([FromBody] RegisterInput registerInput)
         {
-            int status = -1;
             try
             {
-                status = await _conn.Register(registerInput);
+                int status = await _conn.Register(registerInput);
                 if (status == 1)
                     await _emailSender.ExecuteSender(registerInput.Email);
                 return status;
@@ -117,5 +106,15 @@ namespace RocketFreeMarketAPI.Controllers
             return HttpStatusCode.OK;
         }
 
+
+        [Authorize]
+        [HttpPost("test")]
+        public string test()
+        {
+            var identity = HttpContext.User.Identity as ClaimsIdentity;
+            var cliam = identity.Claims.ToList();
+            var email = cliam[0].Value;
+            return "Hello " + email;
+        }
     }
 }

@@ -15,7 +15,7 @@ namespace DataAccessLayerUnitTest.DatabaseConnection.UnitTest
     [TestClass]
     public class AccountConnectionTest
     {
-        private string _connectionString;
+        private const string _connectionString = "Server=.\\SQLEXPRESS; Database=TestRocketFreeMarket; Trusted_Connection=True;";
 
         private async Task<bool> changeStatus(int status, string email)
         {
@@ -41,9 +41,6 @@ namespace DataAccessLayerUnitTest.DatabaseConnection.UnitTest
         [TestInitialize()]
         public async Task Initialize()
         {
-            string jsonText = await File.ReadAllTextAsync(@"../../../DatabaseConnectionUnitTest/config.json");
-            Dictionary<string, string> conn = JsonConvert.DeserializeObject<Dictionary<string, string>>(jsonText);
-            _connectionString = conn["TestConnection"];
             using SqlConnection sqlcon = new SqlConnection(_connectionString);
             using SqlCommand sqlcmd = new SqlCommand("SP_TRUNCATE_TABLE", sqlcon) { CommandType = CommandType.StoredProcedure };
             try
@@ -75,12 +72,12 @@ namespace DataAccessLayerUnitTest.DatabaseConnection.UnitTest
             var result = await conn.Register(registerInput);
             
             //Assert
-            Assert.IsTrue(result);
+            Assert.AreEqual(1, result);
         }
 
 
         [TestMethod]
-        public async Task Register_ExistingAccount_ReturnFalse()
+        public async Task Register_ExistingAccount_ReturnTrue()
         {
             //Arrange
             RegisterInput registerInput = new RegisterInput()
@@ -97,7 +94,7 @@ namespace DataAccessLayerUnitTest.DatabaseConnection.UnitTest
             var result = await conn.Register(registerInput);
 
             //Assert
-            Assert.IsFalse(result);
+            Assert.AreEqual(-1, result);
         }
 
 

@@ -4,8 +4,10 @@ using DTO;
 using Entities;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Data.SqlClient;
 using System.IdentityModel.Tokens.Jwt;
 using System.Reflection.Metadata.Ecma335;
@@ -44,84 +46,39 @@ namespace DataAccessLayer.DatabaseConnection
         
         /*
          * Register new user
-         * 
-         * 
-         * check if email is already existed.
-         * If not exist, create new account,encrypt password and save to database, then return true
-         * if exist, return false
+         *  
+         * If email exist => return -1
+         * Successfully registered => return 1
+         * Database error => 0
          */
 
         public async Task<int> Register(RegisterInput registerInput)
         {
-            //check if email is already existed.
-            if (!await isExist(registerInput.Email.ToUpper()))
+            if (await isExist(registerInput.Email.ToUpper())) return -1;
+
+            string AccountID = _cryptoProcess.AccountIDGenerator(registerInput.Email);
+            
+            Secret secret = await _cryptoProcess.Encrypt_Aes(registerInput.Password);
+            using SqlConnection sqlcon = new SqlConnection(_connectionString);
+            using SqlCommand sqlcmd = new SqlCommand("SP_REGISTER", sqlcon) { CommandType = CommandType.StoredProcedure };
+            sqlcmd.Parameters.AddWithValue("@AccountID", AccountID);
+            sqlcmd.Parameters.AddWithValue("@PhoneNumber", registerInput.PhoneNumber);
+            sqlcmd.Parameters.AddWithValue("@Email", registerInput.Email);
+            sqlcmd.Parameters.AddWithValue("@PasswordHash", secret.Cipher);
+            sqlcmd.Parameters.AddWithValue("@AesIV", secret.IV);
+            sqlcmd.Parameters.AddWithValue("@AesKey", secret.Key);
+            SqlParameter returnValue = new SqlParameter("@ReturnValue", SqlDbType.Int) { Direction = ParameterDirection.Output };
+            sqlcmd.Parameters.Add(returnValue);
+            try
             {
-                //SQL Transaction set to null
-                SqlTransaction sqltrans = null;
-
-                //Establish DBConnection
-                using SqlConnection sqlcon = new SqlConnection(_connectionString);
-
-                //Create Secrect Object
-                Secret secret = await _cryptoProcess.Encrypt_Aes(registerInput.Password);
-
-                //Creating Account              
-                AccountDTO accountDTO = new AccountDTO(registerInput, secret);
-
-                try
-                {
-                    //open db connection
-                    sqlcon.Open();
-
-                    //set up default transaction
-                    sqltrans = sqlcon.BeginTransaction();
-
-                    //insert Account to database  
-                    int accountInsertResult = await insertData(sqlcon, sqltrans, accountDTO, QueryConst.AccountInsertCMD);
-
-                    //if inserted, get the AccountID
-                    int accountID = await getAccountID(sqlcon, sqltrans, registerInput.Email.ToUpper());
-
-                    UserDTO userDTO = new UserDTO()
-                    {
-                        AccountID = accountID
-                    };
-
-                    //Create Access account class and save the encryption key
-                    Access access = new Access()
-                    {
-                        AccountID = accountID,
-                        AesKey = secret.Key
-                    };
-
-                    //insert Access Key to database  
-                    int accessInsertResult = await insertData(sqlcon, sqltrans, access, QueryConst.AccessInsertCMD);
-
-                    //insert User to database
-                    int userInsertResult = await insertData(sqlcon, sqltrans, userDTO, QueryConst.UserInsertCMD);
-
-                    if (accountID != 0 && accountInsertResult > 0 && accessInsertResult > 0 && userInsertResult > 0)
-                    {
-                        sqltrans.Commit();
-                        //throw new Exception();
-                        return 1;
-                    }
-                    else
-                    {
-                        //if User not inserted, rollback 
-                        sqltrans.Rollback();
-                        return -1;
-                    }
-                }
-                catch (Exception e)
-                {
-                    if (sqltrans != null)
-                        sqltrans.Rollback();
-                    return -1;
-                }
+                sqlcon.Open();
+                await sqlcmd.ExecuteNonQueryAsync();
+                return (int)sqlcmd.Parameters["@ReturnValue"].Value;
             }
-            else
+            catch (Exception e)
+            {
                 return 0;
+            }     
         }
 
 
@@ -138,63 +95,6 @@ namespace DataAccessLayer.DatabaseConnection
                 return isCredentialMatch ? status : -9;              
             }
             catch (Exception)
-            {
-                throw;
-            }
-        }
-
-
-        /*
-         * Get account infromation
-         * Parameter : email
-         */
-        public async Task<Account> GetAccountInfo(string email)
-        {
-            Account account = new Account();
-           
-            //Establish DBConnection
-            using SqlConnection sqlcon = new SqlConnection(_connectionString);
-            using SqlCommand getAccInfocCmd = new SqlCommand(QueryConst.GetAccountInfoByEmailCMD, sqlcon);
-            using SqlCommand getAccKeyCmd = new SqlCommand(QueryConst.GetAccountKeyCMD, sqlcon);
-            try
-            {
-                sqlcon.Open();
-                getAccInfocCmd.Parameters.AddWithValue("@NormalizedEmail", email.ToUpper());
-
-                //Get Account infromation from database
-                using (SqlDataReader reader = await getAccInfocCmd.ExecuteReaderAsync())
-                {
-                    while (await reader.ReadAsync())
-                    {
-                        account.AccountID = (int)reader["AccountID"];
-                        account.PhoneNumber = (string)reader["PhoneNumber"];
-                        account.Email = (string)reader["Email"];
-                        account.NormalizedEmail = (string)reader["NormalizedEmail"];
-                        account.PasswordHash = (byte[])reader["PasswordHash"];
-                        account.AesIV = (byte[])reader["AesIV"];
-                        account.CreationDate = (DateTime)reader["CreationDate"];
-                        account.UpdateDate = (DateTime)reader["UpdateDate"];
-                        account.LastLoginDate = (DateTime)reader["LastLoginDate"];
-                        account.EmailVerificationStatus = (bool)reader["EmailVerificationStatus"];
-                        account.PhoneVerificationStatus = (bool)reader["PhoneVerificationStatus"];
-                        account.AccountStatus = (int)reader["AccountStatus"];
-                        account.AccountType = (string)reader["AccountType"];
-                    }
-                }
-
-
-                //Assign Aes key from Access database to Account Class
-                getAccKeyCmd.Parameters.AddWithValue("@AccountID", account.AccountID);
-                using (SqlDataReader accessReader = await getAccKeyCmd.ExecuteReaderAsync())
-                {
-                    while (await accessReader.ReadAsync())
-                    {
-                        account.AesKey = (byte[])accessReader["AesKey"];
-                    }
-                }
-                return account;
-            }
-            catch (Exception e)
             {
                 throw;
             }
@@ -223,6 +123,63 @@ namespace DataAccessLayer.DatabaseConnection
             }
             return result > 0;
         }
+
+
+        public async Task<Account> GetAccountInfo(string email)
+        {
+            Account account = new Account();
+
+            //Establish DBConnection
+            using SqlConnection sqlcon = new SqlConnection(_connectionString);
+            using SqlCommand getAccInfocCmd = new SqlCommand(QueryConst.GetAccountInfoByEmailCMD, sqlcon);
+            using SqlCommand getAccKeyCmd = new SqlCommand(QueryConst.GetAccountKeyCMD, sqlcon);
+            try
+            {
+                sqlcon.Open();
+                getAccInfocCmd.Parameters.AddWithValue("@NormalizedEmail", email.ToUpper());
+
+                //Get Account infromation from database
+                using (SqlDataReader reader = await getAccInfocCmd.ExecuteReaderAsync())
+                {
+                    while (await reader.ReadAsync())
+                    {
+                        account.AccountID = (string)reader["AccountID"];
+                        account.PhoneNumber = (string)reader["PhoneNumber"];
+                        account.Email = (string)reader["Email"];
+                        account.NormalizedEmail = (string)reader["NormalizedEmail"];
+                        account.PasswordHash = (byte[])reader["PasswordHash"];
+                        account.AesIV = (byte[])reader["AesIV"];
+                        account.CreationDate = (DateTime)reader["CreationDate"];
+                        account.UpdateDate = (DateTime)reader["UpdateDate"];
+                        account.LastLoginDate = (DateTime)reader["LastLoginDate"];
+                        account.EmailVerificationStatus = (bool)reader["EmailVerificationStatus"];
+                        account.PhoneVerificationStatus = (bool)reader["PhoneVerificationStatus"];
+                        account.AccountStatus = (int)reader["AccountStatus"];
+                        account.AccountType = (string)reader["AccountType"];
+                    }
+                }
+
+                //Assign Aes key from Access database to Account Class
+                getAccKeyCmd.Parameters.AddWithValue("@AccountID", account.AccountID);
+                using (SqlDataReader accessReader = await getAccKeyCmd.ExecuteReaderAsync())
+                {
+                    while (await accessReader.ReadAsync())
+                    {
+                        account.AesKey = (byte[])accessReader["AesKey"];
+                    }
+                }
+                return account;
+            }
+            catch (Exception e)
+            {
+                throw;
+            }
+        }
+
+
+
+
+
 
 
         #region Private Help Functions
@@ -294,7 +251,7 @@ namespace DataAccessLayer.DatabaseConnection
                 {
                     while (await reader.ReadAsync())
                     {
-                        account.AccountID = (int)reader["AccountID"];
+                        account.AccountID = (string)reader["AccountID"];
                         account.PasswordHash = (byte[])reader["PasswordHash"];
                         account.AesIV = (byte[])reader["AesIV"];
                     }
