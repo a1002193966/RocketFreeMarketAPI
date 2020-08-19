@@ -81,12 +81,11 @@ namespace DataAccessLayer.EmailSender
 
         private string generateToken(string email)
         {
-            string token = null;
-            using (SHA512 algorithm = SHA512.Create())
-            {
-                byte[] hashedBytes = algorithm.ComputeHash(Encoding.UTF32.GetBytes(email.ToUpper() + DateTime.Now.ToString()));
-                token = BitConverter.ToString(hashedBytes).Replace("-", "");
-            }
+            using SHA512 algorithm = SHA512.Create();          
+            byte[] bytes = algorithm.ComputeHash(Encoding.UTF32.GetBytes(email));
+            string byteString = BitConverter.ToString(bytes).Replace("-", "") + " " + DateTime.Now.AddMinutes(15).ToString();
+            byte[] byteHash = Encoding.UTF7.GetBytes(byteString);
+            string token = JsonConvert.SerializeObject(byteHash).Replace("\"", "");
             return token;
         }
 

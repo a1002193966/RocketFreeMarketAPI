@@ -22,12 +22,6 @@ namespace DataAccessLayer.DatabaseConnection
     {
         private readonly ICryptoProcess _cryptoProcess;
         private readonly string _connectionString;
-        private IConfiguration _config;
-
-        public AccountConnection(IConfiguration config)
-        {
-            _config = config;
-        }
 
 
         //Used for testing purpose.
@@ -54,31 +48,30 @@ namespace DataAccessLayer.DatabaseConnection
 
         public async Task<int> Register(RegisterInput registerInput)
         {
-            if (await isExist(registerInput.Email.ToUpper())) return -1;
-
-            string AccountID = _cryptoProcess.AccountIDGenerator(registerInput.Email);
-            
-            Secret secret = await _cryptoProcess.Encrypt_Aes(registerInput.Password);
-            using SqlConnection sqlcon = new SqlConnection(_connectionString);
-            using SqlCommand sqlcmd = new SqlCommand("SP_REGISTER", sqlcon) { CommandType = CommandType.StoredProcedure };
-            sqlcmd.Parameters.AddWithValue("@AccountID", AccountID);
-            sqlcmd.Parameters.AddWithValue("@PhoneNumber", registerInput.PhoneNumber);
-            sqlcmd.Parameters.AddWithValue("@Email", registerInput.Email);
-            sqlcmd.Parameters.AddWithValue("@PasswordHash", secret.Cipher);
-            sqlcmd.Parameters.AddWithValue("@AesIV", secret.IV);
-            sqlcmd.Parameters.AddWithValue("@AesKey", secret.Key);
-            SqlParameter returnValue = new SqlParameter("@ReturnValue", SqlDbType.Int) { Direction = ParameterDirection.Output };
-            sqlcmd.Parameters.Add(returnValue);
-            try
+            if (!await isExist(registerInput.Email.ToUpper()))
             {
-                sqlcon.Open();
-                await sqlcmd.ExecuteNonQueryAsync();
-                return (int)sqlcmd.Parameters["@ReturnValue"].Value;
+                string AccountID = _cryptoProcess.AccountIDGenerator(registerInput.Email);
+                Secret secret = await _cryptoProcess.Encrypt_Aes(registerInput.Password);
+                using SqlConnection sqlcon = new SqlConnection(_connectionString);
+                using SqlCommand sqlcmd = new SqlCommand("SP_REGISTER", sqlcon) { CommandType = CommandType.StoredProcedure };
+                sqlcmd.Parameters.AddWithValue("@AccountID", AccountID);
+                sqlcmd.Parameters.AddWithValue("@PhoneNumber", registerInput.PhoneNumber);
+                sqlcmd.Parameters.AddWithValue("@Email", registerInput.Email);
+                sqlcmd.Parameters.AddWithValue("@PasswordHash", secret.Cipher);
+                sqlcmd.Parameters.AddWithValue("@AesIV", secret.IV);
+                sqlcmd.Parameters.AddWithValue("@AesKey", secret.Key);             
+                sqlcmd.Parameters.Add(new SqlParameter("@ReturnValue", SqlDbType.Int) { Direction = ParameterDirection.Output });
+                try
+                {
+                    sqlcon.Open();
+                    await sqlcmd.ExecuteNonQueryAsync();
+                    return (int)sqlcmd.Parameters["@ReturnValue"].Value;
+                }
+                catch (Exception e)
+                {
+                }
             }
-            catch (Exception e)
-            {
-                return 0;
-            }     
+            return -1;     
         }
 
 
@@ -103,24 +96,28 @@ namespace DataAccessLayer.DatabaseConnection
         
         public async Task<bool> ActivateAccount(string encryptedEmail, string token)
         {
+            bool isTokenExpired = _cryptoProcess.ValidateVerificationToken(token);
             int result = 0;
-            string decryptedEmail = _cryptoProcess.DecodeHash(encryptedEmail).ToUpper();
-            bool isMatch = await verifyToken(decryptedEmail, token);
-            if (isMatch)
+            if(!isTokenExpired)
             {
-                using SqlConnection sqlcon = new SqlConnection(_connectionString);
-                using SqlCommand sqlcmd = new SqlCommand(QueryConst.ActivateAccountCMD, sqlcon);
-                try
+                string decryptedEmail = _cryptoProcess.DecodeHash(encryptedEmail).ToUpper();
+                bool isTokenMatch = await verifyToken(decryptedEmail, token);
+                if (isTokenMatch)
                 {
-                    sqlcon.Open();
+                    using SqlConnection sqlcon = new SqlConnection(_connectionString);
+                    using SqlCommand sqlcmd = new SqlCommand(QueryConst.ActivateAccountCMD, sqlcon);
                     sqlcmd.Parameters.AddWithValue("@NormalizedEmail", decryptedEmail);
-                    result = await sqlcmd.ExecuteNonQueryAsync();
+                    try
+                    {
+                        sqlcon.Open();
+                        result = await sqlcmd.ExecuteNonQueryAsync();
+                    }
+                    catch (Exception e)
+                    {
+                        throw;
+                    }
                 }
-                catch (Exception e)
-                {
-                    throw;
-                }
-            }
+            }          
             return result > 0;
         }
 

@@ -33,24 +33,6 @@ namespace RocketFreeMarketAPI.Controllers
             _loginToken = loginToken;
         }
 
-        // GetAccountInfo <AccountsController>/test@test.com
-        [HttpGet("{email}")]
-        public async Task<Account> GetAccountInfo([FromRoute] string email)
-        {
-            try
-            {
-                Account account = await _conn.GetAccountInfo(email);
-                if (account.AccountID == null)
-                {
-                    return null;
-                }
-                return account;
-            }
-            catch (Exception)
-            {
-                throw;
-            }
-        }
 
         //Login <AccountsController>/login
         [HttpPost("login")]
@@ -89,6 +71,27 @@ namespace RocketFreeMarketAPI.Controllers
                 throw;
             }
         }
+
+
+        // GetAccountInfo <AccountsController>/test@test.com
+        [HttpGet("{email}")]
+        public async Task<Account> GetAccountInfo([FromRoute] string email)
+        {
+            try
+            {
+                Account account = await _conn.GetAccountInfo(email);
+                if (account.AccountID == null)
+                {
+                    return null;
+                }
+                return account;
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
 
         [HttpGet("ConfirmEmail")]
         public async Task<HttpStatusCode> ConfirmEmail(string e, string t)

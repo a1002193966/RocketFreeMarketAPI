@@ -14,5 +14,6 @@ namespace DataAccessLayer.Infrastructure
         string DecodeHash(string hash);
         string EncodeText(string text);
         string AccountIDGenerator(string email);
+        bool ValidateVerificationToken(string token);
     }
 }

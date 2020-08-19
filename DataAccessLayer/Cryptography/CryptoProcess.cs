@@ -108,5 +108,15 @@ namespace DataAccessLayer.Cryptography
             }
             return id;
         }
+
+        public bool ValidateVerificationToken(string token)
+        {
+            string originalToken = "\"" + token + "\"";
+            byte[] bytes = JsonConvert.DeserializeObject<byte[]>(originalToken);
+            string byteString = Encoding.UTF7.GetString(bytes);
+            string[] tokenArray = byteString.Split(" ");
+            DateTime expirationDate = Convert.ToDateTime(tokenArray[1] + " " + tokenArray[2]);
+            return expirationDate < DateTime.Now;
+        }
     }
 }
