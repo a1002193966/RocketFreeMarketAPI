@@ -1,3 +1,0 @@
-{
-    "TestConnection": "Server=.\\WEISQL; Database=TestRocketFreeMarket; Trusted_Connection=True;"
-}
