@@ -37,7 +37,6 @@ namespace RocketFreeMarketAPI.Controllers
             }
         }
 
-
         // PUT <UsersController>
         [HttpPut("UpdateProfile")]
         public async Task<bool> UpdateProfile([FromBody]ProfileDTO profile)

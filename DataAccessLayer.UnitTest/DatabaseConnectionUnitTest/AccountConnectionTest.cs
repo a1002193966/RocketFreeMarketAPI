@@ -1,12 +1,10 @@
 ﻿using DataAccessLayer.Cryptography;
 using DataAccessLayer.DatabaseConnection;
-using DataAccessLayer.UnitTest.DatabaseConnectionUnitTest;
 using DTO;
-using Microsoft.Extensions.Configuration;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Newtonsoft.Json;
 using System;
-using System.Configuration;
+using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
 using System.IO;
@@ -17,8 +15,7 @@ namespace DataAccessLayerUnitTest.DatabaseConnection.UnitTest
     [TestClass]
     public class AccountConnectionTest
     {
-        private string _connectionString;
-        private ConnectionDTO connection;
+        private const string _connectionString = "Server=.\\SQLEXPRESS; Database=TestRocketFreeMarket; Trusted_Connection=True;";
 
         private async Task<bool> changeStatus(int status, string email)
         {
@@ -44,18 +41,17 @@ namespace DataAccessLayerUnitTest.DatabaseConnection.UnitTest
         [TestInitialize()]
         public async Task Initialize()
         {
-            using StreamReader file = File.OpenText(@"../../../DatabaseConnectionUnitTest/Config.json");
-            JsonSerializer deserializer = new JsonSerializer();
-            connection = (ConnectionDTO)deserializer.Deserialize(file, typeof(ConnectionDTO));
-            _connectionString = connection.TestConnection;
             using SqlConnection sqlcon = new SqlConnection(_connectionString);
-            sqlcon.Open();
-            using SqlCommand sqlcmd = new SqlCommand("SP_TRUNCATE_TABLE", sqlcon)
+            using SqlCommand sqlcmd = new SqlCommand("SP_TRUNCATE_TABLE", sqlcon) { CommandType = CommandType.StoredProcedure };
+            try
             {
-                CommandType = CommandType.StoredProcedure
-            };
-            await sqlcmd.ExecuteNonQueryAsync();
-            sqlcon.Close();
+                sqlcon.Open();
+                await sqlcmd.ExecuteNonQueryAsync();
+            }
+            catch(Exception e)
+            {
+                throw;
+            }
         }
 
 
@@ -76,12 +72,12 @@ namespace DataAccessLayerUnitTest.DatabaseConnection.UnitTest
             var result = await conn.Register(registerInput);
             
             //Assert
-            Assert.IsTrue(result);
+            Assert.AreEqual(1, result);
         }
 
 
         [TestMethod]
-        public async Task Register_ExistingAccount_ReturnFalse()
+        public async Task Register_ExistingAccount_ReturnTrue()
         {
             //Arrange
             RegisterInput registerInput = new RegisterInput()
@@ -98,7 +94,7 @@ namespace DataAccessLayerUnitTest.DatabaseConnection.UnitTest
             var result = await conn.Register(registerInput);
 
             //Assert
-            Assert.IsFalse(result);
+            Assert.AreEqual(-1, result);
         }
 
 
