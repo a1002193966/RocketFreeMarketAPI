@@ -39,24 +39,21 @@ namespace RocketFreeMarketAPI
                                                                 .AllowAnyMethod()
                                                                 .AllowAnyHeader()
                                                                 .AllowCredentials();
-                                                            }));
-                                                             
+                                                            }));                                                           
             services.AddControllers();
-
-            services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
-    {
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuer = true,
-            ValidateAudience = true,
-            ValidateLifetime = true,
-            ValidateIssuerSigningKey = true,
-            ValidIssuer = Configuration.GetSection("JWT").GetSection("Issuer").Value,
-            ValidAudience = Configuration.GetSection("JWT").GetSection("Issuer").Value,
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Configuration.GetSection("JWT").GetSection("Key").Value))
-        };
-    });
+            services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(options =>
+            {
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidateLifetime = true,
+                    ValidateIssuerSigningKey = true,
+                    ValidIssuer = Configuration.GetSection("JWT").GetSection("Issuer").Value,
+                    ValidAudience = Configuration.GetSection("JWT").GetSection("Issuer").Value,
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Configuration.GetSection("JWT").GetSection("Key").Value))
+                };
+            });
 
             services.AddSingleton<IAccountConnection, AccountConnection>();
             services.AddSingleton<IUserConnection, UserConnection>();

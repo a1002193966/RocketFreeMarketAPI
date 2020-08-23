@@ -33,6 +33,46 @@ namespace RocketFreeMarketAPI.Controllers
             _loginToken = loginToken;
         }
 
+
+        //Login <AccountsController>/login
+        [HttpPost("login")]
+        public async Task<IActionResult> Login([FromBody] LoginInput loginInput)
+        {
+            try
+            {
+                var result = await _conn.Login(loginInput);
+                IActionResult response = Unauthorized();
+                if (result == 1)
+                {
+                    var tokenString = _loginToken.GenerateToken(loginInput);
+                    response = Ok(new { token = tokenString });
+                }
+                return response;
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
+        // Register <AccountsController>/register
+        [HttpPost("register")]
+        public async Task<int> Register([FromBody] RegisterInput registerInput)
+        {
+            try
+            {
+                int status = await _conn.Register(registerInput);
+                if (status == 1)
+                    await _emailSender.ExecuteSender(registerInput.Email);
+                return status;
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
+
         // GetAccountInfo <AccountsController>/test@test.com
         [HttpGet("{email}")]
         public async Task<Account> GetAccountInfo([FromRoute] string email)
@@ -40,7 +80,7 @@ namespace RocketFreeMarketAPI.Controllers
             try
             {
                 Account account = await _conn.GetAccountInfo(email);
-                if (account.AccountID == 0)
+                if (account.AccountID == null)
                 {
                     return null;
                 }
@@ -51,58 +91,7 @@ namespace RocketFreeMarketAPI.Controllers
                 throw;
             }
         }
-        [Authorize]
-        [HttpPost("test")]
-        public string test()
-        {
-            var identity = HttpContext.User.Identity as ClaimsIdentity;
-            var cliam = identity.Claims.ToList();
-            var email = cliam[0].Value;
-            return "Hello " + email;
-        }
 
-        //Login <AccountsController>/login
-        [HttpPost("login")]
-        public async Task<IActionResult> Login([FromBody] LoginInput loginInput)
-        {
-
-            try{
-                var result = await _conn.Login(loginInput);
-                IActionResult response = Unauthorized();
-                if (result == 1)
-                {
-                    var tokenString = _loginToken.GenerateToken(loginInput);
-                    response = Ok(new { token = tokenString });
-                }
-                return response;
-
-            }
-            catch (Exception)
-            {
-                throw;
-            }
-        }
-
-        // Register <AccountsController>/register
-        [HttpPost("register")]
-        public async Task<HttpStatusCode> Register([FromBody] RegisterInput registerInput)
-        {
-            HttpStatusCode status = HttpStatusCode.BadRequest;
-            try
-            {
-                bool isDone = await _conn.Register(registerInput);
-                if (isDone)
-                {
-                    status = HttpStatusCode.Created;
-                    await _emailSender.ExecuteSender(registerInput.Email);
-                }
-            }
-            catch (Exception)
-            {
-                throw;
-            }
-            return status;
-        }
 
         [HttpGet("ConfirmEmail")]
         public async Task<HttpStatusCode> ConfirmEmail(string e, string t)
@@ -120,5 +109,15 @@ namespace RocketFreeMarketAPI.Controllers
             return HttpStatusCode.OK;
         }
 
+
+        [Authorize]
+        [HttpPost("test")]
+        public string test()
+        {
+            var identity = HttpContext.User.Identity as ClaimsIdentity;
+            var cliam = identity.Claims.ToList();
+            var email = cliam[0].Value;
+            return "Hello " + email;
+        }
     }
 }

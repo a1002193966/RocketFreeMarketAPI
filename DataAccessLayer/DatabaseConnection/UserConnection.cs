@@ -38,7 +38,7 @@ namespace DataAccessLayer.DatabaseConnection
                     _ = reader["FirstName"] != DBNull.Value ? user.FirstName = (string)reader["FirstName"] : user.FirstName = null;
                     _ = reader["LastName"] != DBNull.Value ? user.LastName = (string)reader["LastName"] : user.LastName = null;
                     _ = reader["DOB"] != DBNull.Value ? user.DOB = (DateTime)reader["DOB"] : user.DOB = null;
-                    user.AccountID = (int)reader["AccountID"];
+                    user.AccountID = (string)reader["AccountID"];
                     user.UpdateID = (int)reader["UpdateID"];
                     user.UpdateDate = (DateTime)reader["UpdateDate"];
                 }

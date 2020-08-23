@@ -18,11 +18,11 @@ namespace DataAccessLayer.EmailSender
     public class EmailSender : IEmailSender
     {
         private readonly ICryptoProcess _cryptoProcess;
-        private readonly string _connectionString;
+        private readonly IConfiguration _configuration;
         public EmailSender(IConfiguration configuration, ICryptoProcess cryptoProcess)
         {
             _cryptoProcess = cryptoProcess;
-            _connectionString = configuration.GetConnectionString("DefaultConnection");
+            _configuration = configuration;
         }
 
         public async Task<bool> ExecuteSender(string email)
@@ -45,15 +45,11 @@ namespace DataAccessLayer.EmailSender
 
         private async Task sendEmailConfirmation(string email, string token)
         {
-            using MailMessage mail = new MailMessage();
-            using SmtpClient smtp = new SmtpClient();
-            SmtpPackage smtpPackage;
-            using (StreamReader file = File.OpenText(@"..\DataAccessLayer\EmailSender\SmtpPackage.json"))
-            {
-                JsonSerializer deserializer = new JsonSerializer();
-                smtpPackage = (SmtpPackage)deserializer.Deserialize(file, typeof(SmtpPackage));
-            }
+            SmtpPackage smtpPackage = JsonConvert.DeserializeObject<SmtpPackage>(_configuration.GetSection("SMTP").Value);
 
+            using MailMessage mail = new MailMessage();
+            using SmtpClient smtp = new SmtpClient();   
+            
             mail.From = new MailAddress(await _cryptoProcess.Decrypt_Aes(smtpPackage.UsernamePackage));
             mail.To.Add(email);
             mail.IsBodyHtml = true;
@@ -70,7 +66,7 @@ namespace DataAccessLayer.EmailSender
  
         private async Task<int> saveToken(string email, string token)
         {
-            using SqlConnection sqlcon = new SqlConnection(_connectionString);
+            using SqlConnection sqlcon = new SqlConnection(_configuration.GetConnectionString("DefaultConnection"));
             sqlcon.Open();
             string cmd = "SP_UPDATE_TOKEN";
             using SqlCommand sqlcmd = new SqlCommand(cmd, sqlcon)
@@ -85,12 +81,11 @@ namespace DataAccessLayer.EmailSender
 
         private string generateToken(string email)
         {
-            string token = null;
-            using (SHA512 algorithm = SHA512.Create())
-            {
-                byte[] hashedBytes = algorithm.ComputeHash(Encoding.UTF32.GetBytes(email.ToUpper() + DateTime.Now.ToString()));
-                token = BitConverter.ToString(hashedBytes).Replace("-", "");
-            }
+            using SHA512 algorithm = SHA512.Create();          
+            byte[] bytes = algorithm.ComputeHash(Encoding.UTF32.GetBytes(email));
+            string byteString = BitConverter.ToString(bytes).Replace("-", "") + " " + DateTime.Now.AddMinutes(15).ToString();
+            byte[] byteHash = Encoding.UTF7.GetBytes(byteString);
+            string token = JsonConvert.SerializeObject(byteHash).Replace("\"", "");
             return token;
         }
 
