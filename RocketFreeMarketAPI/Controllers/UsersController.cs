@@ -31,7 +31,7 @@ namespace RocketFreeMarketAPI.Controllers
             {
                 return await _conn.GetProfile(email);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 throw;
             }
@@ -45,7 +45,7 @@ namespace RocketFreeMarketAPI.Controllers
             {
                 return await _conn.UpdateProfile(profile);
             }
-            catch(Exception)
+            catch(Exception ex)
             {
                 throw;
             }

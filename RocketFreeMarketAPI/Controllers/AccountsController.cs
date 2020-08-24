@@ -36,39 +36,75 @@ namespace RocketFreeMarketAPI.Controllers
 
         //Login <AccountsController>/login
         [HttpPost("login")]
-        public async Task<IActionResult> Login([FromBody] LoginInput loginInput)
+        public async Task<IActionResult> Login([FromBody]LoginInput loginInput)
         {
             try
             {
-                var result = await _conn.Login(loginInput);
-                IActionResult response = Unauthorized();
-                if (result == 1)
+                int status = await _conn.Login(loginInput);
+                switch (status)
                 {
-                    var tokenString = _loginToken.GenerateToken(loginInput);
-                    response = Ok(new { token = tokenString });
+                    case 1:
+                        string tokenString = _loginToken.GenerateToken(loginInput);
+                        return Ok(new { status = 1, token = tokenString });
+                    case 0:
+                        return Unauthorized(new { status = 0, message = "Please verify your email address." });
+                    case -1:
+                        return Unauthorized(new { status = -1, message = "Account locked. Please reset your password." });
+                    case -7:
+                        return Unauthorized(new { status = -7, message = "Account disabled. Please contact the customer support." });
+                    default:
+                        return BadRequest(new { status = -9, message = "Incorrect email or password." });
                 }
-                return response;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                return BadRequest(new { status = -9, message = ex.Message });
             }
         }
 
+
         // Register <AccountsController>/register
         [HttpPost("register")]
-        public async Task<int> Register([FromBody] RegisterInput registerInput)
+        public async Task<IActionResult> Register([FromBody]RegisterInput registerInput)
         {
             try
             {
                 int status = await _conn.Register(registerInput);
-                if (status == 1)
-                    await _emailSender.ExecuteSender(registerInput.Email);
-                return status;
+                switch (status)
+                {
+                    case 1:
+                        await _emailSender.ExecuteSender(registerInput.Email);
+                        return Ok(new { status = 1, message = "Successfully registerd." });
+                    case -1:
+                        return BadRequest(new { status = -1, message = "Account already exists." });
+                    default:
+                        return BadRequest(new { status = 0, message = "Internal server error." });
+                }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                return BadRequest(new { status = 0, message = ex.Message });
+            }
+        }
+
+
+        [HttpGet("ConfirmEmail")]
+        public async Task<IActionResult> ConfirmEmail(string e, string t)
+        {
+            // e == email, t == token
+            if (e == null || t == null)
+                return BadRequest( new { status = -1, message = "Invalid link." } );
+            try
+            {
+                bool isActivated = await _conn.ActivateAccount(e, t);
+                if (isActivated)
+                    return Ok(new { status = 1, message = "Account has been activated." });
+                else
+                    return BadRequest( new { status = 0, message = "Account has already been activated or link expired." } );
+            }
+            catch (Exception ex)
+            {
+                return BadRequest( new { status = -1, message = ex.Message } );
             }
         }
 
@@ -86,27 +122,10 @@ namespace RocketFreeMarketAPI.Controllers
                 }
                 return account;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 throw;
             }
-        }
-
-
-        [HttpGet("ConfirmEmail")]
-        public async Task<HttpStatusCode> ConfirmEmail(string e, string t)
-        {
-            // e == email, t == token
-            try
-            {
-                if (e == null || t == null || await _conn.ActivateAccount(e, t) == false)
-                    return HttpStatusCode.Unauthorized;
-            }
-            catch
-            {
-                return HttpStatusCode.Unauthorized;
-            }
-            return HttpStatusCode.OK;
         }
 
 
