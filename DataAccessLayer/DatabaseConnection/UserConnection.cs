@@ -44,7 +44,7 @@ namespace DataAccessLayer.DatabaseConnection
                 }
                 return user;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 throw;
             }
@@ -67,7 +67,7 @@ namespace DataAccessLayer.DatabaseConnection
                 int result = await sqlcmd.ExecuteNonQueryAsync();
                 return result > 0;
             }
-            catch(Exception)
+            catch(Exception ex)
             {
                 throw;
             }

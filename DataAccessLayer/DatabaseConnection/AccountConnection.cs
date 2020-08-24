@@ -67,8 +67,9 @@ namespace DataAccessLayer.DatabaseConnection
                     await sqlcmd.ExecuteNonQueryAsync();
                     return (int)sqlcmd.Parameters["@ReturnValue"].Value;
                 }
-                catch (Exception e)
+                catch (Exception ex)
                 {
+                    throw;
                 }
             }
             return -1;     
@@ -87,7 +88,7 @@ namespace DataAccessLayer.DatabaseConnection
                 int status = await getAccountStatus(loginInput.Email.ToUpper());
                 return isCredentialMatch ? status : -9;              
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 throw;
             }
@@ -112,7 +113,7 @@ namespace DataAccessLayer.DatabaseConnection
                         sqlcon.Open();
                         result = await sqlcmd.ExecuteNonQueryAsync();
                     }
-                    catch (Exception e)
+                    catch (Exception ex)
                     {
                         throw;
                     }
@@ -167,7 +168,7 @@ namespace DataAccessLayer.DatabaseConnection
                 }
                 return account;
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
                 throw;
             }
@@ -182,50 +183,6 @@ namespace DataAccessLayer.DatabaseConnection
         #region Private Help Functions
 
 
-        private async Task<int> insertData<T>(SqlConnection sqlcon, SqlTransaction sqltrans, T model, String query)
-        {
-            int result;
-            using SqlCommand sqlcmd = new SqlCommand(query, sqlcon, sqltrans);
-            try
-            {            
-                foreach (var x in model.GetType().GetProperties())
-                {
-                    sqlcmd.Parameters.AddWithValue("@" + x.Name, x.GetValue(model, null));
-                }
-                result = await sqlcmd.ExecuteNonQueryAsync();
-            }
-            catch (Exception e)
-            {
-                throw;
-            }
-            return result;
-        }
-
-
-        /*
-         * Get Account ID
-         *
-         */
-        private async Task<int> getAccountID(SqlConnection sqlcon, SqlTransaction sqltrans, string email)
-        {
-            using SqlCommand sqlcmd = new SqlCommand(QueryConst.GetAccountIDByEmailCMD, sqlcon, sqltrans);
-            try
-            {
-                sqlcmd.Parameters.AddWithValue("@NormalizedEmail", email.ToUpper());
-                using SqlDataReader reader = await sqlcmd.ExecuteReaderAsync();
-                int id = 0;
-                while (await reader.ReadAsync())
-                {
-                    id = (int)reader["AccountID"];
-                }
-                return id;
-            }
-            catch (Exception e)
-            {
-                throw;
-            }
-        }
-
         /*
          * verify Login information
          */
@@ -237,7 +194,6 @@ namespace DataAccessLayer.DatabaseConnection
             using SqlConnection sqlcon = new SqlConnection(_connectionString);
             using SqlCommand getHashcmd = new SqlCommand(QueryConst.GetAccountHashCMD, sqlcon);
             using SqlCommand getKeycmd = new SqlCommand(QueryConst.GetAccountKeyCMD, sqlcon);
-
             try
             {
                 sqlcon.Open();
@@ -265,7 +221,7 @@ namespace DataAccessLayer.DatabaseConnection
                 }
                 return hashCompare(account.PasswordHash, await _cryptoProcess.Encrypt_Aes_With_Key_IV(loginInput.Password, account.AesKey, account.AesIV));
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
                 throw;
             }
@@ -303,7 +259,7 @@ namespace DataAccessLayer.DatabaseConnection
                 using SqlDataReader reader = await sqlcmd.ExecuteReaderAsync();
                 return await reader.ReadAsync();
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
                 throw;
             }
@@ -325,7 +281,7 @@ namespace DataAccessLayer.DatabaseConnection
                 }
                 return status;
             }
-            catch(Exception e)
+            catch(Exception ex)
             {
                 throw;
             }
@@ -348,7 +304,7 @@ namespace DataAccessLayer.DatabaseConnection
                 }             
                 return false;
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
                 throw;
             }
