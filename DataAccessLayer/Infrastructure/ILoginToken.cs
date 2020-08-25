@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-using DTO;
+﻿using DTO;
 
 namespace DataAccessLayer.Infrastructure
 {
