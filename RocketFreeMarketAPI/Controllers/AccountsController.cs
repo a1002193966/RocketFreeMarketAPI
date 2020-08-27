@@ -1,14 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Net;
-using System.Reflection.Metadata.Ecma335;
 using System.Security.Claims;
-using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
 using DataAccessLayer.Infrastructure;
 using DTO;
-using Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Http;
@@ -34,7 +29,44 @@ namespace RocketFreeMarketAPI.Controllers
         }
 
 
-        //Login <AccountsController>/login
+        // <summary>      
+        // If email exists => return -1
+        // Successfully registered => return 1
+        // Database error => 0
+        // Register <AccountsController>/register
+        // </summary>
+        [HttpPost("register")]
+        public async Task<IActionResult> Register([FromBody] RegisterInput registerInput)
+        {
+            try
+            {
+                int status = await _conn.Register(registerInput);
+                switch (status)
+                {
+                    case 1:
+                        await _emailSender.ExecuteSender(registerInput.Email);
+                        return Ok(new { status = 1, message = "Successfully registerd." });
+                    case -1:
+                        return BadRequest(new { status = -1, message = "Account already exists." });
+                    default:
+                        return BadRequest(new { status = 0, message = "Internal server error." });
+                }
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { status = 0, message = ex.Message });
+            }
+        }
+
+
+        // <summary>
+        // Incorrect email or password => return -9
+        // Successfully logged in => return 1
+        // Require email verification => return 0
+        // Account Locked => return -1
+        // Account disabled => return -7
+        // Login <AccountsController>/login
+        // </summary>
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody]LoginInput loginInput)
         {
@@ -63,68 +95,29 @@ namespace RocketFreeMarketAPI.Controllers
         }
 
 
-        // Register <AccountsController>/register
-        [HttpPost("register")]
-        public async Task<IActionResult> Register([FromBody]RegisterInput registerInput)
-        {
-            try
-            {
-                int status = await _conn.Register(registerInput);
-                switch (status)
-                {
-                    case 1:
-                        await _emailSender.ExecuteSender(registerInput.Email);
-                        return Ok(new { status = 1, message = "Successfully registerd." });
-                    case -1:
-                        return BadRequest(new { status = -1, message = "Account already exists." });
-                    default:
-                        return BadRequest(new { status = 0, message = "Internal server error." });
-                }
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new { status = 0, message = ex.Message });
-            }
-        }
-
-
+        // <summary>
+        // Activate account by verifying email address.
+        // ConfirmEmail <AccountsController>/confirmemail?e={e}&t={t}
+        // e => email, t => token
+        // </summary>
         [HttpGet("ConfirmEmail")]
         public async Task<IActionResult> ConfirmEmail(string e, string t)
         {
-            // e == email, t == token
             if (e == null || t == null)
                 return BadRequest( new { status = -1, message = "Invalid link." } );
             try
             {
-                bool isActivated = await _conn.ActivateAccount(e, t);
-                if (isActivated)
-                    return Ok(new { status = 1, message = "Account has been activated." });
-                else
-                    return BadRequest( new { status = 0, message = "Account has already been activated or link expired." } );
+                int status = await _conn.ActivateAccount(e, t);
+                return status switch
+                {
+                    1 => Ok(new { status = 1, message = "Account has been activated." }),
+                    0 => BadRequest(new { status = 0, message = "Account has already been activated or link expired." }),
+                    _ => BadRequest(new { status = -1, message = "Internal Server Error." }),
+                };
             }
             catch (Exception ex)
             {
                 return BadRequest( new { status = -1, message = ex.Message } );
-            }
-        }
-
-
-        // GetAccountInfo <AccountsController>/test@test.com
-        [HttpGet("{email}")]
-        public async Task<Account> GetAccountInfo([FromRoute] string email)
-        {
-            try
-            {
-                Account account = await _conn.GetAccountInfo(email);
-                if (account.AccountID == null)
-                {
-                    return null;
-                }
-                return account;
-            }
-            catch (Exception ex)
-            {
-                throw;
             }
         }
 
@@ -137,7 +130,6 @@ namespace RocketFreeMarketAPI.Controllers
             var cliam = identity.Claims.ToList();
             var email_value = cliam[0].Value;
             return Ok(new { email = email_value });
-          
         }
     }
 }

@@ -2,7 +2,6 @@
 using DTO;
 using Newtonsoft.Json;
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
@@ -15,7 +14,6 @@ namespace DataAccessLayer.Cryptography
         public async Task<Secret> Encrypt_Aes(string password)
         {
             Secret secret = new Secret();
-
             using (Aes aes = Aes.Create())
             {
                 secret.Key = aes.Key;
@@ -35,7 +33,6 @@ namespace DataAccessLayer.Cryptography
         public async Task<byte[]> Encrypt_Aes_With_Key_IV(string password, byte[] key, byte[] IV)
         {
             byte[] secret;
-
             using (Aes aes = Aes.Create())
             {
                 aes.Key = key;
@@ -51,7 +48,6 @@ namespace DataAccessLayer.Cryptography
             }
             return secret;
         }
-
 
         public async Task<string> Decrypt_Aes(Secret secret)
         {
