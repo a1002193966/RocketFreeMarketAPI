@@ -44,16 +44,28 @@ namespace RocketFreeMarketAPI.Controllers
                 {
                     case EEmailStatus.RegistarEmailSuccess:
                         await _emailSender.ExecuteSender(registerInput.Email);
-                        return Ok(new { status = EEmailStatus.RegistarEmailSuccess, message = "Successfully registerd." });
+                        return Ok(new { 
+                            status = EEmailStatus.RegistarEmailSuccess,
+                            message = "Successfully registerd."
+                        });
                     case EEmailStatus.EmailExists:
-                        return BadRequest(new { status = EEmailStatus.EmailExists, message = "Account already exists." });
+                        return BadRequest(new {
+                            status = EEmailStatus.EmailExists,
+                            message = "Account already exists."
+                        });
                     default:
-                        return BadRequest(new { status = EEmailStatus.InternalServerError, message = "Internal server error." });
+                        return BadRequest(new { 
+                            status = EEmailStatus.InternalServerError, 
+                            message = "Internal server error."
+                        });
                 }
             }
             catch (Exception ex)
             {
-                return BadRequest(new { status = EEmailStatus.InternalServerError, message = ex.Message });
+                return BadRequest(new {
+                    status = EEmailStatus.InternalServerError, 
+                    message = ex.Message 
+                });
             }
         }
 
@@ -76,20 +88,38 @@ namespace RocketFreeMarketAPI.Controllers
                 {
                     case EAccountStatus.LoginSuccess:
                         string tokenString = _loginToken.GenerateToken(loginInput);
-                        return Ok(new { status = EAccountStatus.LoginSuccess, token = tokenString });
+                        return Ok(new {
+                            status = EAccountStatus.LoginSuccess,
+                            token = tokenString 
+                        });
                     case EAccountStatus.EmailNotActivated:
-                        return Unauthorized(new { status = EAccountStatus.EmailNotActivated, message = "Please activate your email address." });
+                        return Unauthorized(new { 
+                                status = EAccountStatus.EmailNotActivated,
+                                message = "Please activate your email address." 
+                            });
                     case EAccountStatus.AccountLocked:
-                        return Unauthorized(new { status = EAccountStatus.AccountLocked, message = "Account locked. Please reset your password." });
+                        return Unauthorized(new { 
+                            status = EAccountStatus.AccountLocked,
+                            message = "Account locked. Please reset your password."
+                        });
                     case EAccountStatus.AccountDisabled:
-                        return Unauthorized(new { status = EAccountStatus.AccountDisabled, message = "Account disabled. Please contact the customer support." });
+                        return Unauthorized(new {
+                            status = EAccountStatus.AccountDisabled,
+                            message = "Account disabled. Please contact the customer support." 
+                        });
                     default:
-                        return BadRequest(new { status = EAccountStatus.WrongLoginInfo, message = "Incorrect email or password." });
+                        return BadRequest(new {
+                            status = EAccountStatus.WrongLoginInfo,
+                            message = "Incorrect email or password." 
+                        });
                 }
             }
             catch (Exception ex)
             {
-                return BadRequest(new { status = EAccountStatus.WrongLoginInfo, message = ex.Message });
+                return BadRequest(new {
+                    status = EAccountStatus.WrongLoginInfo,
+                    message = ex.Message
+                });
             }
         }
 
