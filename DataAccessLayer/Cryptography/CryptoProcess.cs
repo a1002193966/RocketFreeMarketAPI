@@ -79,32 +79,6 @@ namespace DataAccessLayer.Cryptography
             return hash;
         }
 
-        public string AccountIDGenerator(string email)
-        {
-            string A = email.Substring(0, email.Length / 2);
-            string B = email[(email.Length / 2)..];
-            Random rnd = new Random();
-            string C = "";
-            string D = "";
-            for (int i = 0; i < 5; i++)
-            {
-                C += (char)rnd.Next(33, 126);
-                D += (char)rnd.Next(33, 126);
-            }
-            byte[] bytes = Encoding.ASCII.GetBytes(A + C + B + D);
-            string byteString = JsonConvert.SerializeObject(bytes).Replace("\"", "");
-
-            string id = "";
-            if (byteString.Length <= 50)
-                id = byteString;
-            else
-            {
-                for (int i = 0; i < 50; i++)
-                    id += byteString[rnd.Next(0, byteString.Length)];
-            }
-            return id;
-        }
-
         public bool ValidateVerificationToken(string token)
         {
             string originalToken = "\"" + token + "\"";
