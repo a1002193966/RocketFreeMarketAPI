@@ -34,7 +34,7 @@ namespace DataAccessLayer.DatabaseConnection
         // Successfully registered => return 1
         // Database error => 0
         // </summary>
-        public async Task<int> Register(RegisterInput registerInput)
+        public async Task<EEmailStatus> Register(RegisterInput registerInput)
         {
             if (!await isExist(registerInput.Email.ToUpper()))
             {
@@ -53,11 +53,15 @@ namespace DataAccessLayer.DatabaseConnection
                 {
                     sqlcon.Open();
                     await sqlcmd.ExecuteNonQueryAsync();
-                    return (int)sqlcmd.Parameters["@ReturnValue"].Value;
+                    if((int) sqlcmd.Parameters["@ReturnValue"].Value >= 1)
+                    {
+                        return EEmailStatus.RegistarEmailSuccess;
+                    }
+                    //return (int)sqlcmd.Parameters["@ReturnValue"].Value;
                 }
                 catch (Exception ex) { throw; }
             }
-            return -1;     
+            return EEmailStatus.EmailExists;     
         }
 
 
@@ -68,12 +72,12 @@ namespace DataAccessLayer.DatabaseConnection
         // Account Locked => return -1
         // Account disabled => return -7
         // </summary>
-        public async Task<int> Login(LoginInput loginInput)
+        public async Task<EAccountStatus> Login(LoginInput loginInput)
         {
             try
             {
                 if (!await isExist(loginInput.Email.ToUpper()))
-                    return -9;
+                    return EAccountStatus.WrongLoginInfo;
                 byte[] passwordHash = await getPasswordHash(loginInput.Email, loginInput.Password);
                 using SqlConnection sqlcon = new SqlConnection(_connectionString);
                 using SqlCommand sqlcmd = new SqlCommand("SP_LOGIN", sqlcon) { CommandType = CommandType.StoredProcedure };
@@ -82,7 +86,14 @@ namespace DataAccessLayer.DatabaseConnection
                 sqlcmd.Parameters.Add(new SqlParameter("@ReturnValue", SqlDbType.Int) { Direction = ParameterDirection.Output });
                 sqlcon.Open();
                 await sqlcmd.ExecuteNonQueryAsync();
-                return (int)sqlcmd.Parameters["@ReturnValue"].Value;
+                if ((int)sqlcmd.Parameters["@ReturnValue"].Value >= 1){
+                    return EAccountStatus.LoginSuccess;
+                }
+                else
+                {
+                    return EAccountStatus.WrongLoginInfo;
+                }
+               // return (int)sqlcmd.Parameters["@ReturnValue"].Value;
             }
             catch (Exception ex) { throw; }
         }

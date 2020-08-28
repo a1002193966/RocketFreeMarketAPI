@@ -20,7 +20,6 @@ namespace RocketFreeMarketAPI.Controllers
         private readonly IAccountConnection _conn;
         private readonly IEmailSender _emailSender;
         private readonly ILoginToken _loginToken;
-
         public AccountsController(IAccountConnection conn, IEmailSender emailSender, ILoginToken loginToken)
         {
             _conn = conn;
@@ -40,21 +39,21 @@ namespace RocketFreeMarketAPI.Controllers
         {
             try
             {
-                int status = await _conn.Register(registerInput);
+                EEmailStatus status = (EEmailStatus)await _conn.Register(registerInput);
                 switch (status)
                 {
-                    case 1:
+                    case EEmailStatus.RegistarEmailSuccess:
                         await _emailSender.ExecuteSender(registerInput.Email);
-                        return Ok(new { status = 1, message = "Successfully registerd." });
-                    case -1:
-                        return BadRequest(new { status = -1, message = "Account already exists." });
+                        return Ok(new { status = EEmailStatus.RegistarEmailSuccess, message = "Successfully registerd." });
+                    case EEmailStatus.EmailExists:
+                        return BadRequest(new { status = EEmailStatus.EmailExists, message = "Account already exists." });
                     default:
-                        return BadRequest(new { status = 0, message = "Internal server error." });
+                        return BadRequest(new { status = EEmailStatus.InternalServerError, message = "Internal server error." });
                 }
             }
             catch (Exception ex)
             {
-                return BadRequest(new { status = 0, message = ex.Message });
+                return BadRequest(new { status = EEmailStatus.InternalServerError, message = ex.Message });
             }
         }
 
@@ -72,25 +71,25 @@ namespace RocketFreeMarketAPI.Controllers
         {
             try
             {
-                int status = await _conn.Login(loginInput);
+                EAccountStatus status = (EAccountStatus)await _conn.Login(loginInput);
                 switch (status)
                 {
-                    case 1:
+                    case EAccountStatus.LoginSuccess:
                         string tokenString = _loginToken.GenerateToken(loginInput);
-                        return Ok(new { status = 1, token = tokenString });
-                    case 0:
-                        return Unauthorized(new { status = 0, message = "Please verify your email address." });
-                    case -1:
-                        return Unauthorized(new { status = -1, message = "Account locked. Please reset your password." });
-                    case -7:
-                        return Unauthorized(new { status = -7, message = "Account disabled. Please contact the customer support." });
+                        return Ok(new { status = EAccountStatus.LoginSuccess, token = tokenString });
+                    case EAccountStatus.EmailNotActivated:
+                        return Unauthorized(new { status = EAccountStatus.EmailNotActivated, message = "Please activate your email address." });
+                    case EAccountStatus.AccountLocked:
+                        return Unauthorized(new { status = EAccountStatus.AccountLocked, message = "Account locked. Please reset your password." });
+                    case EAccountStatus.AccountDisabled:
+                        return Unauthorized(new { status = EAccountStatus.AccountDisabled, message = "Account disabled. Please contact the customer support." });
                     default:
-                        return BadRequest(new { status = -9, message = "Incorrect email or password." });
+                        return BadRequest(new { status = EAccountStatus.WrongLoginInfo, message = "Incorrect email or password." });
                 }
             }
             catch (Exception ex)
             {
-                return BadRequest(new { status = -9, message = ex.Message });
+                return BadRequest(new { status = EAccountStatus.WrongLoginInfo, message = ex.Message });
             }
         }
 
