@@ -87,7 +87,7 @@ namespace RocketFreeMarketAPI.Controllers
                 switch (status)
                 {
                     case ELoginStatus.LoginSucceeded:
-                        string tokenString = _loginToken.GenerateToken(loginInput);
+                        string tokenString = await _loginToken.GenerateToken(loginInput);
                         return Ok(new {
                             status = ELoginStatus.LoginSucceeded,
                             token = tokenString 
