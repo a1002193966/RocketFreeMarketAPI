@@ -38,11 +38,9 @@ namespace DataAccessLayer.DatabaseConnection
         {
             if (!await isExist(registerInput.Email.ToUpper()))
             {
-                string AccountID = _cryptoProcess.AccountIDGenerator(registerInput.Email);
                 Secret secret = await _cryptoProcess.Encrypt_Aes(registerInput.Password);
                 using SqlConnection sqlcon = new SqlConnection(_connectionString);
                 using SqlCommand sqlcmd = new SqlCommand("SP_REGISTER", sqlcon) { CommandType = CommandType.StoredProcedure };
-                sqlcmd.Parameters.AddWithValue("@AccountID", AccountID);
                 sqlcmd.Parameters.AddWithValue("@PhoneNumber", registerInput.PhoneNumber);
                 sqlcmd.Parameters.AddWithValue("@Email", registerInput.Email);
                 sqlcmd.Parameters.AddWithValue("@PasswordHash", secret.Cipher);

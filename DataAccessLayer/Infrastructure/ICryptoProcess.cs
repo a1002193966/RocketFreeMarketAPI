@@ -10,7 +10,6 @@ namespace DataAccessLayer.Infrastructure
         Task<string> Decrypt_Aes(Secret secret);
         string DecodeHash(string hash);
         string EncodeText(string text);
-        string AccountIDGenerator(string email);
         bool ValidateVerificationToken(string token);
     }
 }
