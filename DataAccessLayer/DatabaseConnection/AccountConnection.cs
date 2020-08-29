@@ -4,6 +4,7 @@ using Microsoft.Extensions.Configuration;
 using System;
 using System.Data;
 using System.Data.SqlClient;
+using System.Reflection.Metadata.Ecma335;
 using System.Threading.Tasks;
 
 
@@ -34,11 +35,11 @@ namespace DataAccessLayer.DatabaseConnection
         // Successfully registered => return 1
         // Database error => 0
         // </summary>
-        public async Task<int> Register(RegisterInput registerInput)
+        public async Task<ERegisterStatus> Register(RegisterInput registerInput)
         {
             try
             {
-                if (await isExist(registerInput.Email.ToUpper())) return -1;
+                if (await isExist(registerInput.Email.ToUpper())) return ERegisterStatus.EmailExists;
                 Secret secret = await _cryptoProcess.Encrypt_Aes(registerInput.Password);
                 using SqlConnection sqlcon = new SqlConnection(_connectionString);
                 using SqlCommand sqlcmd = new SqlCommand("SP_REGISTER", sqlcon) { CommandType = CommandType.StoredProcedure };
@@ -50,10 +51,9 @@ namespace DataAccessLayer.DatabaseConnection
                 sqlcmd.Parameters.Add(new SqlParameter("@ReturnValue", SqlDbType.Int) { Direction = ParameterDirection.Output });
                 sqlcon.Open();
                 await sqlcmd.ExecuteNonQueryAsync();
-                return (int)sqlcmd.Parameters["@ReturnValue"].Value;
+                return (int)sqlcmd.Parameters["@ReturnValue"].Value == 1 ? ERegisterStatus.RegisterSucceeded : ERegisterStatus.InternalServerError;
             }
-            catch (Exception ex) { throw; }
-          
+            catch (Exception ex) { throw; }       
         }
 
 
@@ -64,11 +64,11 @@ namespace DataAccessLayer.DatabaseConnection
         // Account Locked => return -1
         // Account disabled => return -7
         // </summary>
-        public async Task<int> Login(LoginInput loginInput)
+        public async Task<ELoginStatus> Login(LoginInput loginInput)
         {
             try
             {
-                if (!await isExist(loginInput.Email.ToUpper())) return -9;
+                if (!await isExist(loginInput.Email.ToUpper())) return ELoginStatus.IncorrectCredential;
                 byte[] passwordHash = await getPasswordHash(loginInput.Email, loginInput.Password);
                 using SqlConnection sqlcon = new SqlConnection(_connectionString);
                 using SqlCommand sqlcmd = new SqlCommand("SP_LOGIN", sqlcon) { CommandType = CommandType.StoredProcedure };
@@ -77,7 +77,7 @@ namespace DataAccessLayer.DatabaseConnection
                 sqlcmd.Parameters.Add(new SqlParameter("@ReturnValue", SqlDbType.Int) { Direction = ParameterDirection.Output });
                 sqlcon.Open();
                 await sqlcmd.ExecuteNonQueryAsync();
-                return (int)sqlcmd.Parameters["@ReturnValue"].Value;
+                return (ELoginStatus)sqlcmd.Parameters["@ReturnValue"].Value;
             }
             catch (Exception ex) { throw; }
         }
@@ -86,12 +86,12 @@ namespace DataAccessLayer.DatabaseConnection
         // <summary>
         // Activate account by verifying email address.
         // </summary>
-        public async Task<int> ActivateAccount(string encryptedEmail, string token)
+        public async Task<EEmailVerifyStatus> ActivateAccount(string encryptedEmail, string token)
         {
             try 
             { 
                 bool isTokenExpired = _cryptoProcess.ValidateVerificationToken(token);
-                if (isTokenExpired) return -1;           
+                if (isTokenExpired) return EEmailVerifyStatus.InternalServerError;        
                 string decryptedEmail = _cryptoProcess.DecodeHash(encryptedEmail).ToUpper();              
                 using SqlConnection sqlcon = new SqlConnection(_connectionString);
                 using SqlCommand sqlcmd = new SqlCommand("SP_CONFIRM_EMAIL", sqlcon) { CommandType = CommandType.StoredProcedure };
@@ -100,7 +100,7 @@ namespace DataAccessLayer.DatabaseConnection
                 sqlcmd.Parameters.Add(new SqlParameter("@ReturnValue", SqlDbType.Int) { Direction = ParameterDirection.Output });          
                 sqlcon.Open();
                 await sqlcmd.ExecuteNonQueryAsync();
-                return (int)sqlcmd.Parameters["@ReturnValue"].Value;
+                return (EEmailVerifyStatus)sqlcmd.Parameters["@ReturnValue"].Value;                           
             }
             catch (Exception ex) { throw; }
         }
