@@ -36,8 +36,9 @@ namespace DataAccessLayer.DatabaseConnection
         // </summary>
         public async Task<int> Register(RegisterInput registerInput)
         {
-            if (!await isExist(registerInput.Email.ToUpper()))
+            try
             {
+                if (await isExist(registerInput.Email.ToUpper())) return -1;
                 Secret secret = await _cryptoProcess.Encrypt_Aes(registerInput.Password);
                 using SqlConnection sqlcon = new SqlConnection(_connectionString);
                 using SqlCommand sqlcmd = new SqlCommand("SP_REGISTER", sqlcon) { CommandType = CommandType.StoredProcedure };
@@ -45,17 +46,14 @@ namespace DataAccessLayer.DatabaseConnection
                 sqlcmd.Parameters.AddWithValue("@Email", registerInput.Email);
                 sqlcmd.Parameters.AddWithValue("@PasswordHash", secret.Cipher);
                 sqlcmd.Parameters.AddWithValue("@AesIV", secret.IV);
-                sqlcmd.Parameters.AddWithValue("@AesKey", secret.Key);             
+                sqlcmd.Parameters.AddWithValue("@AesKey", secret.Key);
                 sqlcmd.Parameters.Add(new SqlParameter("@ReturnValue", SqlDbType.Int) { Direction = ParameterDirection.Output });
-                try
-                {
-                    sqlcon.Open();
-                    await sqlcmd.ExecuteNonQueryAsync();
-                    return (int)sqlcmd.Parameters["@ReturnValue"].Value;
-                }
-                catch (Exception ex) { throw; }
+                sqlcon.Open();
+                await sqlcmd.ExecuteNonQueryAsync();
+                return (int)sqlcmd.Parameters["@ReturnValue"].Value;
             }
-            return -1;     
+            catch (Exception ex) { throw; }
+          
         }
 
 
@@ -70,8 +68,7 @@ namespace DataAccessLayer.DatabaseConnection
         {
             try
             {
-                if (!await isExist(loginInput.Email.ToUpper()))
-                    return -9;
+                if (!await isExist(loginInput.Email.ToUpper())) return -9;
                 byte[] passwordHash = await getPasswordHash(loginInput.Email, loginInput.Password);
                 using SqlConnection sqlcon = new SqlConnection(_connectionString);
                 using SqlCommand sqlcmd = new SqlCommand("SP_LOGIN", sqlcon) { CommandType = CommandType.StoredProcedure };
@@ -91,17 +88,16 @@ namespace DataAccessLayer.DatabaseConnection
         // </summary>
         public async Task<int> ActivateAccount(string encryptedEmail, string token)
         {
-            bool isTokenExpired = _cryptoProcess.ValidateVerificationToken(token);
-            if (isTokenExpired) return -1;
-            
-            string decryptedEmail = _cryptoProcess.DecodeHash(encryptedEmail).ToUpper();              
-            using SqlConnection sqlcon = new SqlConnection(_connectionString);
-            using SqlCommand sqlcmd = new SqlCommand("SP_CONFIRM_EMAIL", sqlcon) { CommandType = CommandType.StoredProcedure };
-            sqlcmd.Parameters.AddWithValue("@Email", decryptedEmail);
-            sqlcmd.Parameters.AddWithValue("@Token", token);
-            sqlcmd.Parameters.Add(new SqlParameter("@ReturnValue", SqlDbType.Int) { Direction = ParameterDirection.Output });
-            try
-            {
+            try 
+            { 
+                bool isTokenExpired = _cryptoProcess.ValidateVerificationToken(token);
+                if (isTokenExpired) return -1;           
+                string decryptedEmail = _cryptoProcess.DecodeHash(encryptedEmail).ToUpper();              
+                using SqlConnection sqlcon = new SqlConnection(_connectionString);
+                using SqlCommand sqlcmd = new SqlCommand("SP_CONFIRM_EMAIL", sqlcon) { CommandType = CommandType.StoredProcedure };
+                sqlcmd.Parameters.AddWithValue("@Email", decryptedEmail);
+                sqlcmd.Parameters.AddWithValue("@Token", token);
+                sqlcmd.Parameters.Add(new SqlParameter("@ReturnValue", SqlDbType.Int) { Direction = ParameterDirection.Output });          
                 sqlcon.Open();
                 await sqlcmd.ExecuteNonQueryAsync();
                 return (int)sqlcmd.Parameters["@ReturnValue"].Value;
