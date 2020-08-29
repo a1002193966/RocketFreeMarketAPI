@@ -39,23 +39,23 @@ namespace RocketFreeMarketAPI.Controllers
         {
             try
             {
-                EEmailStatus status = (EEmailStatus)await _conn.Register(registerInput);
+                EEmailRegister status = await _conn.Register(registerInput);
                 switch (status)
                 {
-                    case EEmailStatus.RegistarEmailSuccess:
+                    case EEmailRegister.RegistarEmailSuccess:
                         await _emailSender.ExecuteSender(registerInput.Email);
                         return Ok(new { 
-                            status = EEmailStatus.RegistarEmailSuccess,
+                            status = EEmailRegister.RegistarEmailSuccess,
                             message = "Successfully registerd."
                         });
-                    case EEmailStatus.EmailExists:
+                    case EEmailRegister.EmailExists:
                         return BadRequest(new {
-                            status = EEmailStatus.EmailExists,
+                            status = EEmailRegister.EmailExists,
                             message = "Account already exists."
                         });
                     default:
                         return BadRequest(new { 
-                            status = EEmailStatus.InternalServerError, 
+                            status = EEmailRegister.InternalServerError, 
                             message = "Internal server error."
                         });
                 }
@@ -63,7 +63,7 @@ namespace RocketFreeMarketAPI.Controllers
             catch (Exception ex)
             {
                 return BadRequest(new {
-                    status = EEmailStatus.InternalServerError, 
+                    status = EEmailRegister.InternalServerError, 
                     message = ex.Message 
                 });
             }
@@ -83,7 +83,7 @@ namespace RocketFreeMarketAPI.Controllers
         {
             try
             {
-                EAccountStatus status = (EAccountStatus)await _conn.Login(loginInput);
+                EAccountStatus status = await _conn.Login(loginInput);
                 switch (status)
                 {
                     case EAccountStatus.LoginSuccess:
@@ -133,20 +133,35 @@ namespace RocketFreeMarketAPI.Controllers
         public async Task<IActionResult> ConfirmEmail(string e, string t)
         {
             if (e == null || t == null)
-                return BadRequest( new { status = -1, message = "Invalid link." } );
+                return BadRequest( new { 
+                    status = EActivateAccount.InternalServerError,
+                    message = "Invalid link." 
+                });
             try
             {
-                int status = await _conn.ActivateAccount(e, t);
+                EActivateAccount status = await _conn.ActivateAccount(e, t);
                 return status switch
                 {
-                    1 => Ok(new { status = 1, message = "Account has been activated." }),
-                    0 => BadRequest(new { status = 0, message = "Account has already been activated or link expired." }),
-                    _ => BadRequest(new { status = -1, message = "Internal Server Error." }),
+                    EActivateAccount.ActivatedAccount => Ok(new {
+                        status = EActivateAccount.ActivatedAccount, 
+                        message = "Account has been activated." 
+                    }),
+                    EActivateAccount.ActivateAccountFailed => BadRequest(new {
+                        status = EActivateAccount.ActivateAccountFailed, 
+                        message = "Account has already been activated or link expired."
+                    }),
+                    _ => BadRequest(new {
+                        status = EActivateAccount.InternalServerError,
+                        message = "Internal Server Error." 
+                    }),
                 };
             }
             catch (Exception ex)
             {
-                return BadRequest( new { status = -1, message = ex.Message } );
+                return BadRequest( new { 
+                    status = EActivateAccount.InternalServerError, 
+                    message = ex.Message 
+                } );
             }
         }
 
