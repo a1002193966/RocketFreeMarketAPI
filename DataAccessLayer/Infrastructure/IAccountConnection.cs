@@ -5,8 +5,8 @@ namespace DataAccessLayer.Infrastructure
 {
     public interface IAccountConnection
     {
-        Task<EEmailStatus> Register(RegisterInput registerInput);
+        Task<EEmailRegister> Register(RegisterInput registerInput);
         Task<EAccountStatus> Login(LoginInput loginInput);
-        Task<int> ActivateAccount(string email, string token);
+        Task<EActivateAccount> ActivateAccount(string email, string token);
     }
 }

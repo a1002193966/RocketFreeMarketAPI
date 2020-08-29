@@ -34,7 +34,7 @@ namespace DataAccessLayer.DatabaseConnection
         // Successfully registered => return 1
         // Database error => 0
         // </summary>
-        public async Task<EEmailStatus> Register(RegisterInput registerInput)
+        public async Task<EEmailRegister> Register(RegisterInput registerInput)
         {
             if (!await isExist(registerInput.Email.ToUpper()))
             {
@@ -55,13 +55,13 @@ namespace DataAccessLayer.DatabaseConnection
                     await sqlcmd.ExecuteNonQueryAsync();
                     if((int) sqlcmd.Parameters["@ReturnValue"].Value >= 1)
                     {
-                        return EEmailStatus.RegistarEmailSuccess;
+                        return EEmailRegister.RegistarEmailSuccess;
                     }
                     //return (int)sqlcmd.Parameters["@ReturnValue"].Value;
                 }
                 catch (Exception ex) { throw; }
             }
-            return EEmailStatus.EmailExists;     
+            return EEmailRegister.EmailExists;     
         }
 
 
@@ -102,10 +102,10 @@ namespace DataAccessLayer.DatabaseConnection
         // <summary>
         // Activate account by verifying email address.
         // </summary>
-        public async Task<int> ActivateAccount(string encryptedEmail, string token)
+        public async Task<EActivateAccount> ActivateAccount(string encryptedEmail, string token)
         {
             bool isTokenExpired = _cryptoProcess.ValidateVerificationToken(token);
-            if (isTokenExpired) return -1;
+            if (isTokenExpired) return EActivateAccount.InternalServerError;
             
             string decryptedEmail = _cryptoProcess.DecodeHash(encryptedEmail).ToUpper();              
             using SqlConnection sqlcon = new SqlConnection(_connectionString);
@@ -117,7 +117,15 @@ namespace DataAccessLayer.DatabaseConnection
             {
                 sqlcon.Open();
                 await sqlcmd.ExecuteNonQueryAsync();
-                return (int)sqlcmd.Parameters["@ReturnValue"].Value;
+                if ((int)sqlcmd.Parameters["@ReturnValue"].Value >= 1)
+                {
+                    return EActivateAccount.ActivatedAccount;
+                }
+                else
+                {
+                    return EActivateAccount.ActivateAccountFailed;
+                }
+              
             }
             catch (Exception ex) { throw; }
         }
