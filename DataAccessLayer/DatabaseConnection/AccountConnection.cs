@@ -50,8 +50,8 @@ namespace DataAccessLayer.DatabaseConnection
                 sqlcmd.Parameters.AddWithValue("@AesKey", secret.Key);
                 sqlcmd.Parameters.Add(new SqlParameter("@ReturnValue", SqlDbType.Int) { Direction = ParameterDirection.Output });
                 sqlcon.Open();
-                await sqlcmd.ExecuteNonQueryAsync();
-                return (int)sqlcmd.Parameters["@ReturnValue"].Value == 1 ? ERegisterStatus.RegisterSucceeded : ERegisterStatus.InternalServerError;
+                await sqlcmd.ExecuteNonQueryAsync();              
+                return (ERegisterStatus)sqlcmd.Parameters["@ReturnValue"].Value;
             }
             catch (Exception ex) { throw; }       
         }

@@ -46,16 +46,13 @@ namespace DataAccessLayer.EmailSender
         private async Task sendEmailConfirmation(string email, string token)
         {
             SmtpPackage smtpPackage = JsonConvert.DeserializeObject<SmtpPackage>(_configuration.GetSection("SMTP").Value);
-
             using MailMessage mail = new MailMessage();
-            using SmtpClient smtp = new SmtpClient();   
-            
+            using SmtpClient smtp = new SmtpClient();             
             mail.From = new MailAddress(await _cryptoProcess.Decrypt_Aes(smtpPackage.UsernamePackage));
             mail.To.Add(email);
             mail.IsBodyHtml = true;
             mail.Subject = "Rocket Free Market Email Confirmation";
             mail.Body = string.Format(smtpPackage.EmailBody, string.Format(smtpPackage.ConfirmationLink, _cryptoProcess.EncodeText(email), token));
-
             smtp.Host = smtpPackage.Host;
             smtp.Port = smtpPackage.Port;
             smtp.Credentials = new NetworkCredential(await _cryptoProcess.Decrypt_Aes(smtpPackage.UsernamePackage), await _cryptoProcess.Decrypt_Aes(smtpPackage.PasswordPackage));
@@ -67,16 +64,20 @@ namespace DataAccessLayer.EmailSender
         private async Task<int> saveToken(string email, string token)
         {
             using SqlConnection sqlcon = new SqlConnection(_configuration.GetConnectionString("DefaultConnection"));
-            sqlcon.Open();
-            string cmd = "SP_UPDATE_TOKEN";
-            using SqlCommand sqlcmd = new SqlCommand(cmd, sqlcon)
+            try
             {
-                CommandType = CommandType.StoredProcedure
-            };
-            sqlcmd.Parameters.AddWithValue("@Email", email.ToUpper());
-            sqlcmd.Parameters.AddWithValue("@Token", token);
-            int result = await sqlcmd.ExecuteNonQueryAsync();
-            return result;
+                sqlcon.Open();
+                string cmd = "SP_UPDATE_TOKEN";
+                using SqlCommand sqlcmd = new SqlCommand(cmd, sqlcon)
+                {
+                    CommandType = CommandType.StoredProcedure
+                };
+                sqlcmd.Parameters.AddWithValue("@Email", email.ToUpper());
+                sqlcmd.Parameters.AddWithValue("@Token", token);
+                int result = await sqlcmd.ExecuteNonQueryAsync();
+                return result;
+            }
+            catch(Exception ex) { throw; }
         }
 
         private string generateToken(string email)
