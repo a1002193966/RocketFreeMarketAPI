@@ -1,16 +1,15 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using System.Text;
+using DataAccessLayer.Cryptography;
+using DataAccessLayer.DatabaseConnection;
+using DataAccessLayer.EmailSender;
+using DataAccessLayer.Infrastructure;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using DataAccessLayer.Infrastructure;
-using DataAccessLayer.DatabaseConnection;
-using DataAccessLayer.Cryptography;
-using DataAccessLayer.EmailSender;
+using Microsoft.IdentityModel.Tokens;
 
 namespace RocketFreeMarketAPI
 {
@@ -26,19 +25,34 @@ namespace RocketFreeMarketAPI
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddCors(options => options.AddPolicy(name: "CorsPolicy", 
+          
+            services.AddCors(options => options.AddPolicy(name: "CorsPolicy",
                                                             builder => {
-                                                                builder.AllowAnyOrigin()
-                                                                       .AllowAnyHeader()
-                                                                       .AllowAnyMethod();
-                                                            }
-                                                            ));      
-
+                                                                builder
+                                                                .WithOrigins("http://localhost:4200")
+                                                                .AllowAnyMethod()
+                                                                .AllowAnyHeader()
+                                                                .AllowCredentials();
+                                                            }));                                                           
             services.AddControllers();
+            services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(options =>
+            {
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidateLifetime = true,
+                    ValidateIssuerSigningKey = true,
+                    ValidIssuer = Configuration.GetSection("JWT").GetSection("Issuer").Value,
+                    ValidAudience = Configuration.GetSection("JWT").GetSection("Issuer").Value,
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Configuration.GetSection("JWT").GetSection("Key").Value))
+                };
+            });
             services.AddSingleton<IAccountConnection, AccountConnection>();
+            services.AddSingleton<IUserConnection, UserConnection>();
             services.AddTransient<ICryptoProcess, CryptoProcess>();
             services.AddTransient<IEmailSender, EmailSender>();
-
+            services.AddTransient<ILoginToken, LoginToken>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -48,15 +62,11 @@ namespace RocketFreeMarketAPI
             {
                 app.UseDeveloperExceptionPage();
             }
-
             app.UseHttpsRedirection();
-
             app.UseRouting();
-
             app.UseCors("CorsPolicy");
-
+            app.UseAuthentication();
             app.UseAuthorization();
-
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();

@@ -1,5 +1,4 @@
-﻿
-namespace DTO
+﻿namespace DTO
 {
     public class SmtpPackage
     {

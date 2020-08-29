@@ -1,12 +1,12 @@
 ﻿using DTO;
-using Entities;
+using System.Threading.Tasks;
 
 namespace DataAccessLayer.Infrastructure
 {
     public interface IAccountConnection
-    {     
-        bool Register(RegisterInput registerInput);
-        bool Login(LoginInput loginInput);
-        Account GetAccountInfo(string email);
+    {
+        Task<EEmailRegister> Register(RegisterInput registerInput);
+        Task<EAccountStatus> Login(LoginInput loginInput);
+        Task<EActivateAccount> ActivateAccount(string email, string token);
     }
 }

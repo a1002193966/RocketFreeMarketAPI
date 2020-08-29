@@ -1,9 +1,9 @@
-﻿
+﻿using System.Threading.Tasks;
 
 namespace DataAccessLayer.Infrastructure
 {
     public interface IEmailSender
     {
-        void ExecuteSender(string email);
+        Task<bool> ExecuteSender(string email);
     }
 }

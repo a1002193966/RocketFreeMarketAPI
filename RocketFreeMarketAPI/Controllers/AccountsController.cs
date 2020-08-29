@@ -1,12 +1,13 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
-using Entities;
-using Microsoft.AspNetCore.Mvc;
 using DataAccessLayer.Infrastructure;
-using Microsoft.AspNetCore.Cors;
 using DTO;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Cors;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 
 
 namespace RocketFreeMarketAPI.Controllers
@@ -14,76 +15,165 @@ namespace RocketFreeMarketAPI.Controllers
     [Route("[controller]")]
     [ApiController]
     [EnableCors("CorsPolicy")]
-    public class AccountsController : ControllerBase    
+    public class AccountsController : ControllerBase
     {
         private readonly IAccountConnection _conn;
         private readonly IEmailSender _emailSender;
-
-        public AccountsController(IAccountConnection conn, IEmailSender emailSender)
+        private readonly ILoginToken _loginToken;
+        public AccountsController(IAccountConnection conn, IEmailSender emailSender, ILoginToken loginToken)
         {
             _conn = conn;
             _emailSender = emailSender;
+            _loginToken = loginToken;
         }
 
 
-        // GetAccountInfo <AccountsController>/test@test.com
-        [HttpGet("{email}")]
-        public Account GetAccountInfo([FromRoute] string email)
-        {      
-            return _conn.GetAccountInfo(email);
-        }
-
-        //Login <AccountsController>/login
-        [HttpPost("login")]
-        public bool Login([FromBody] LoginInput loginInput)
-        {
-            return _conn.Login(loginInput);
-        }
-
+        // <summary>      
+        // If email exists => return -1
+        // Successfully registered => return 1
+        // Database error => 0
         // Register <AccountsController>/register
+        // </summary>
         [HttpPost("register")]
-        public bool Register([FromBody] RegisterInput registerInput)
-        {         
-            bool isDone =  _conn.Register(registerInput);
-            if(isDone)
+        public async Task<IActionResult> Register([FromBody] RegisterInput registerInput)
+        {
+            try
             {
-                try 
+                EEmailRegister status = await _conn.Register(registerInput);
+                switch (status)
                 {
-                    _emailSender.ExecuteSender(registerInput.Email);
-                }                
-                catch(Exception e)
-                {
-                    throw;
+                    case EEmailRegister.RegistarEmailSuccess:
+                        await _emailSender.ExecuteSender(registerInput.Email);
+                        return Ok(new { 
+                            status = EEmailRegister.RegistarEmailSuccess,
+                            message = "Successfully registerd."
+                        });
+                    case EEmailRegister.EmailExists:
+                        return BadRequest(new {
+                            status = EEmailRegister.EmailExists,
+                            message = "Account already exists."
+                        });
+                    default:
+                        return BadRequest(new { 
+                            status = EEmailRegister.InternalServerError, 
+                            message = "Internal server error."
+                        });
                 }
             }
-            return isDone;
+            catch (Exception ex)
+            {
+                return BadRequest(new {
+                    status = EEmailRegister.InternalServerError, 
+                    message = ex.Message 
+                });
+            }
         }
 
+
+        // <summary>
+        // Incorrect email or password => return -9
+        // Successfully logged in => return 1
+        // Require email verification => return 0
+        // Account Locked => return -1
+        // Account disabled => return -7
+        // Login <AccountsController>/login
+        // </summary>
+        [HttpPost("login")]
+        public async Task<IActionResult> Login([FromBody]LoginInput loginInput)
+        {
+            try
+            {
+                EAccountStatus status = await _conn.Login(loginInput);
+                switch (status)
+                {
+                    case EAccountStatus.LoginSuccess:
+                        string tokenString = _loginToken.GenerateToken(loginInput);
+                        return Ok(new {
+                            status = EAccountStatus.LoginSuccess,
+                            token = tokenString 
+                        });
+                    case EAccountStatus.EmailNotActivated:
+                        return Unauthorized(new { 
+                                status = EAccountStatus.EmailNotActivated,
+                                message = "Please activate your email address." 
+                            });
+                    case EAccountStatus.AccountLocked:
+                        return Unauthorized(new { 
+                            status = EAccountStatus.AccountLocked,
+                            message = "Account locked. Please reset your password."
+                        });
+                    case EAccountStatus.AccountDisabled:
+                        return Unauthorized(new {
+                            status = EAccountStatus.AccountDisabled,
+                            message = "Account disabled. Please contact the customer support." 
+                        });
+                    default:
+                        return BadRequest(new {
+                            status = EAccountStatus.WrongLoginInfo,
+                            message = "Incorrect email or password." 
+                        });
+                }
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new {
+                    status = EAccountStatus.WrongLoginInfo,
+                    message = ex.Message
+                });
+            }
+        }
+
+
+        // <summary>
+        // Activate account by verifying email address.
+        // ConfirmEmail <AccountsController>/confirmemail?e={e}&t={t}
+        // e => email, t => token
+        // </summary>
         [HttpGet("ConfirmEmail")]
-        public bool ConfirmEmail(string e, string t)
+        public async Task<IActionResult> ConfirmEmail(string e, string t)
         {
-            // e == email, t == token
-            if (e == null || t == null) 
-                return false;
-
-            return true;
+            if (e == null || t == null)
+                return BadRequest( new { 
+                    status = EActivateAccount.InternalServerError,
+                    message = "Invalid link." 
+                });
+            try
+            {
+                EActivateAccount status = await _conn.ActivateAccount(e, t);
+                return status switch
+                {
+                    EActivateAccount.ActivatedAccount => Ok(new {
+                        status = EActivateAccount.ActivatedAccount, 
+                        message = "Account has been activated." 
+                    }),
+                    EActivateAccount.ActivateAccountFailed => BadRequest(new {
+                        status = EActivateAccount.ActivateAccountFailed, 
+                        message = "Account has already been activated or link expired."
+                    }),
+                    _ => BadRequest(new {
+                        status = EActivateAccount.InternalServerError,
+                        message = "Internal Server Error." 
+                    }),
+                };
+            }
+            catch (Exception ex)
+            {
+                return BadRequest( new { 
+                    status = EActivateAccount.InternalServerError, 
+                    message = ex.Message 
+                } );
+            }
         }
 
 
-
-
-
-        
-        // PUT <AccountsController>/5
-        [HttpPut("{id}")]
-        public void Put(int id, [FromBody] string value)
+        [Authorize]
+        [HttpPost("test")]
+        public IActionResult test()
         {
-        }
-
-        // DELETE <AccountsController>/5
-        [HttpDelete("{id}")]
-        public void Delete(int id)
-        {
+            var identity = HttpContext.User.Identity as ClaimsIdentity;
+            var cliam = identity.Claims.ToList();
+            var email_value = cliam[0].Value;
+            return Ok(new { email = email_value });
         }
     }
 }
