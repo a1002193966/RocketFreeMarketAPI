@@ -107,6 +107,28 @@ namespace DataAccessLayer.DatabaseConnection
 
 
 
+        public async Task<EChangePasswordStatus> ChangePassword(ChangePasswordInput changePasswordInput)
+        {
+            try
+            {
+                byte[] oldPasswordHash = await getPasswordHash(changePasswordInput.Email, changePasswordInput.OldPassword);
+                Secret newPasswordSecret = await _cryptoProcess.Encrypt_Aes(changePasswordInput.NewPassword);
+                using SqlConnection sqlcon = new SqlConnection(_connectionString);
+                using SqlCommand sqlcmd = new SqlCommand("SP_CHANGE_PASSWORD", sqlcon) { CommandType = CommandType.StoredProcedure };
+                sqlcmd.Parameters.AddWithValue("@Email", changePasswordInput.Email.ToUpper());
+                sqlcmd.Parameters.AddWithValue("@OldPasswordHash", oldPasswordHash);
+                sqlcmd.Parameters.AddWithValue("@NewPasswordHash", newPasswordSecret.Cipher);
+                sqlcmd.Parameters.AddWithValue("@NewKey", newPasswordSecret.Key);
+                sqlcmd.Parameters.AddWithValue("@NewIV", newPasswordSecret.IV);
+                sqlcmd.Parameters.Add(new SqlParameter("@ReturnValue", SqlDbType.Int) { Direction = ParameterDirection.Output });
+                sqlcon.Open();
+                await sqlcmd.ExecuteNonQueryAsync();
+                return (EChangePasswordStatus)sqlcmd.Parameters["@ReturnValue"].Value;
+            }
+            catch (Exception ex) { throw; }
+        }
+
+
         #region Private Help Functions
 
         private async Task<byte[]> getPasswordHash(string email, string password)

@@ -8,5 +8,6 @@ namespace DataAccessLayer.Infrastructure
         Task<ERegisterStatus> Register(RegisterInput registerInput);
         Task<ELoginStatus> Login(LoginInput loginInput);
         Task<EEmailVerifyStatus> ActivateAccount(string email, string token);
+        Task<EChangePasswordStatus> ChangePassword(ChangePasswordInput changePasswordInput);
     }
 }

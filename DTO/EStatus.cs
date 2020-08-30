@@ -19,9 +19,15 @@ namespace DTO
 
     public enum EEmailVerifyStatus
     {
-        VerifiedSucceeded = 1,
-        VerifiedFailed = 0,
+        VerifySucceeded = 1,
+        VerifyFailed = 0,
         InternalServerError = -1
     }
 
+    public enum EChangePasswordStatus
+    {
+        ChangeSucceeded = 1,
+        ChangeFaild = 0,
+        InternalServerError = -1
+    }
 }
