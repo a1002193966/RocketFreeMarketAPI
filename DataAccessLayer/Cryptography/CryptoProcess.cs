@@ -2,7 +2,6 @@
 using DTO;
 using Newtonsoft.Json;
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
@@ -15,7 +14,6 @@ namespace DataAccessLayer.Cryptography
         public async Task<Secret> Encrypt_Aes(string password)
         {
             Secret secret = new Secret();
-
             using (Aes aes = Aes.Create())
             {
                 secret.Key = aes.Key;
@@ -35,7 +33,6 @@ namespace DataAccessLayer.Cryptography
         public async Task<byte[]> Encrypt_Aes_With_Key_IV(string password, byte[] key, byte[] IV)
         {
             byte[] secret;
-
             using (Aes aes = Aes.Create())
             {
                 aes.Key = key;
@@ -51,7 +48,6 @@ namespace DataAccessLayer.Cryptography
             }
             return secret;
         }
-
 
         public async Task<string> Decrypt_Aes(Secret secret)
         {
@@ -83,39 +79,21 @@ namespace DataAccessLayer.Cryptography
             return hash;
         }
 
-        public string AccountIDGenerator(string email)
-        {
-            string A = email.Substring(0, email.Length / 2);
-            string B = email[(email.Length / 2)..];
-            Random rnd = new Random();
-            string C = "";
-            string D = "";
-            for (int i = 0; i < 5; i++)
-            {
-                C += (char)rnd.Next(33, 126);
-                D += (char)rnd.Next(33, 126);
-            }
-            byte[] bytes = Encoding.ASCII.GetBytes(A + C + B + D);
-            string byteString = JsonConvert.SerializeObject(bytes).Replace("\"", "");
-
-            string id = "";
-            if (byteString.Length <= 50)
-                id = byteString;
-            else
-            {
-                for (int i = 0; i < 50; i++)
-                    id += byteString[rnd.Next(0, byteString.Length)];
-            }
-            return id;
-        }
-
         public bool ValidateVerificationToken(string token)
         {
             string originalToken = "\"" + token + "\"";
             byte[] bytes = JsonConvert.DeserializeObject<byte[]>(originalToken);
             string byteString = Encoding.UTF7.GetString(bytes);
             string[] tokenArray = byteString.Split(" ");
-            DateTime expirationDate = Convert.ToDateTime(tokenArray[1] + " " + tokenArray[2] + " " + tokenArray[3]);
+            DateTime expirationDate;
+            try
+            {
+                expirationDate = Convert.ToDateTime(tokenArray[1] + " " + tokenArray[2] + " " + tokenArray[3]);
+            }
+            catch(Exception ex)
+            {
+                expirationDate = Convert.ToDateTime(tokenArray[1] + " " + tokenArray[2]);
+            }
             return expirationDate < DateTime.Now;
         }
     }

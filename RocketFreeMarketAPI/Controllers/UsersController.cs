@@ -1,11 +1,12 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+using System.Net;
 using System.Threading.Tasks;
 using DataAccessLayer.Infrastructure;
 using DTO;
 using Entities;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Cors;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 
@@ -31,7 +32,7 @@ namespace RocketFreeMarketAPI.Controllers
             {
                 return await _conn.GetProfile(email);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 throw;
             }
@@ -45,7 +46,7 @@ namespace RocketFreeMarketAPI.Controllers
             {
                 return await _conn.UpdateProfile(profile);
             }
-            catch(Exception e)
+            catch(Exception ex)
             {
                 throw;
             }

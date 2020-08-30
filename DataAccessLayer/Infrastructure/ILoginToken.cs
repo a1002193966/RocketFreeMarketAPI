@@ -1,13 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-using DTO;
+﻿using DTO;
+using System.Threading.Tasks;
 
 namespace DataAccessLayer.Infrastructure
 {
     public interface ILoginToken
     {
-        string GenerateToken(LoginInput loginInput);
+        Task<string> GenerateToken(LoginInput loginInput);
     }
 }

@@ -12,11 +12,10 @@ namespace DataAccessLayer.DatabaseConnection
 {
     public class UserConnection : IUserConnection
     {
-        private readonly IConfiguration _configuration;
         private readonly string _connectionString;
+
         public UserConnection(IConfiguration configuration)
         {
-            _configuration = configuration;
             _connectionString = configuration.GetConnectionString("DefaultConnection");
         }
 
@@ -35,16 +34,16 @@ namespace DataAccessLayer.DatabaseConnection
                 while (reader.Read())
                 {
                     user.UserID = (int)reader["UserID"];
-                    _ = reader["FirstName"] != DBNull.Value ? user.FirstName = (string)reader["FirstName"] : user.FirstName = null;
-                    _ = reader["LastName"] != DBNull.Value ? user.LastName = (string)reader["LastName"] : user.LastName = null;
-                    _ = reader["DOB"] != DBNull.Value ? user.DOB = (DateTime)reader["DOB"] : user.DOB = null;
+                    user.FirstName = reader["FirstName"] != DBNull.Value ? (string)reader["FirstName"] : null;
+                    user.LastName = reader["LastName"] != DBNull.Value ? (string)reader["LastName"] : null;
+                    user.DOB = reader["DOB"] != DBNull.Value ? (DateTime)reader["DOB"] : (DateTime?)null;
                     user.AccountID = (string)reader["AccountID"];
                     user.UpdateID = (int)reader["UpdateID"];
                     user.UpdateDate = (DateTime)reader["UpdateDate"];
                 }
                 return user;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 throw;
             }
@@ -67,7 +66,7 @@ namespace DataAccessLayer.DatabaseConnection
                 int result = await sqlcmd.ExecuteNonQueryAsync();
                 return result > 0;
             }
-            catch(Exception)
+            catch(Exception ex)
             {
                 throw;
             }
