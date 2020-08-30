@@ -115,7 +115,7 @@ namespace DataAccessLayer.Cryptography
             byte[] bytes = JsonConvert.DeserializeObject<byte[]>(originalToken);
             string byteString = Encoding.UTF7.GetString(bytes);
             string[] tokenArray = byteString.Split(" ");
-            DateTime expirationDate = Convert.ToDateTime(tokenArray[1] + " " + tokenArray[2]);
+            DateTime expirationDate = Convert.ToDateTime(tokenArray[1] + " " + tokenArray[2] + " " + tokenArray[3]);
             return expirationDate < DateTime.Now;
         }
     }

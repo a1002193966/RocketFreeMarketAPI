@@ -112,12 +112,12 @@ namespace RocketFreeMarketAPI.Controllers
 
         [Authorize]
         [HttpPost("test")]
-        public string test()
+        public IActionResult test()
         {
             var identity = HttpContext.User.Identity as ClaimsIdentity;
             var cliam = identity.Claims.ToList();
             var email = cliam[0].Value;
-            return "Hello " + email;
+            return Ok(new { Email =  email }) ;
         }
     }
 }

@@ -35,9 +35,10 @@ namespace RocketFreeMarketAPI
             services.AddCors(options => options.AddPolicy(name: "CorsPolicy",
                                                             builder => {
                                                                 builder
+                                                                .AllowAnyOrigin()
                                                                 .AllowAnyMethod()
-                                                                .AllowAnyHeader()
-                                                                .AllowCredentials();
+                                                                .AllowAnyHeader();
+                                                                //.AllowCredentials();
                                                             }));                                                           
             services.AddControllers();
             services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(options =>
