@@ -216,7 +216,7 @@ namespace RocketFreeMarketAPI.Controllers
                 return BadRequest(new
                 {
                     status = EChangePasswordStatus.InternalServerError,
-                    message = "Internal Server Error."
+                    message = ex.Message
                 });
             }
         }

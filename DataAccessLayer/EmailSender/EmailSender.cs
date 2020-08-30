@@ -34,10 +34,7 @@ namespace DataAccessLayer.EmailSender
                 await sendEmailConfirmation(email, token);
                 return result > 0;
             }
-            catch (Exception)
-            {
-                throw;
-            }
+            catch (Exception ex) { throw; }
         }
 
 
@@ -77,8 +74,9 @@ namespace DataAccessLayer.EmailSender
                 int result = await sqlcmd.ExecuteNonQueryAsync();
                 return result;
             }
-            catch(Exception ex) { throw; }
+            catch (Exception ex) { throw; }
         }
+
 
         private string generateToken(string email)
         {
