@@ -13,20 +13,23 @@ namespace DataAccessLayer.DatabaseConnection
     public class AccountConnection : IAccountConnection
     {
         private readonly ICryptoProcess _cryptoProcess;
+        private readonly IEmailSender _emailSender;
         private readonly string _connectionString;
 
 
         // Used for testing purpose.
-        public AccountConnection(ICryptoProcess cryptoProcess, string connectionString)
+        public AccountConnection(ICryptoProcess cryptoProcess, string connectionString, IEmailSender emailSender)
         {
             _cryptoProcess = cryptoProcess;
             _connectionString = connectionString;
+            _emailSender = emailSender;
         }
 
-        public AccountConnection(ICryptoProcess cryptoProcess, IConfiguration configuration)
+        public AccountConnection(ICryptoProcess cryptoProcess, IConfiguration configuration, IEmailSender emailSender)
         {
             _cryptoProcess = cryptoProcess;
             _connectionString = configuration.GetConnectionString("DefaultConnection");
+            _emailSender = emailSender;
         }
 
         
@@ -35,11 +38,11 @@ namespace DataAccessLayer.DatabaseConnection
         // Successfully registered => return 1
         // Database error => 0
         // </summary>
-        public async Task<ERegisterStatus> Register(RegisterInput registerInput)
+        public async Task<EStatus> Register(RegisterInput registerInput)
         {
             try
             {
-                if (await isExist(registerInput.Email.ToUpper())) return ERegisterStatus.EmailExists;
+                if (await isExist(registerInput.Email.ToUpper())) return EStatus.EmailExists;
                 Secret secret = await _cryptoProcess.Encrypt_Aes(registerInput.Password);
                 using SqlConnection sqlcon = new SqlConnection(_connectionString);
                 using SqlCommand sqlcmd = new SqlCommand("SP_REGISTER", sqlcon) { CommandType = CommandType.StoredProcedure };
@@ -51,7 +54,7 @@ namespace DataAccessLayer.DatabaseConnection
                 sqlcmd.Parameters.Add(new SqlParameter("@ReturnValue", SqlDbType.Int) { Direction = ParameterDirection.Output });
                 sqlcon.Open();
                 await sqlcmd.ExecuteNonQueryAsync();              
-                return (ERegisterStatus)sqlcmd.Parameters["@ReturnValue"].Value;
+                return (EStatus)sqlcmd.Parameters["@ReturnValue"].Value;
             }
             catch (Exception ex) { throw; }       
         }
@@ -86,12 +89,12 @@ namespace DataAccessLayer.DatabaseConnection
         // <summary>
         // Activate account by verifying email address.
         // </summary>
-        public async Task<EEmailVerifyStatus> ActivateAccount(string encryptedEmail, string token)
+        public async Task<EStatus> ActivateAccount(string encryptedEmail, string token)
         {
             try 
             { 
                 bool isTokenExpired = _cryptoProcess.ValidateVerificationToken(token);
-                if (isTokenExpired) return EEmailVerifyStatus.InternalServerError;        
+                if (isTokenExpired) return EStatus.TokenExpired;        
                 string decryptedEmail = _cryptoProcess.DecodeHash(encryptedEmail).ToUpper();              
                 using SqlConnection sqlcon = new SqlConnection(_connectionString);
                 using SqlCommand sqlcmd = new SqlCommand("SP_CONFIRM_EMAIL", sqlcon) { CommandType = CommandType.StoredProcedure };
@@ -100,14 +103,14 @@ namespace DataAccessLayer.DatabaseConnection
                 sqlcmd.Parameters.Add(new SqlParameter("@ReturnValue", SqlDbType.Int) { Direction = ParameterDirection.Output });          
                 sqlcon.Open();
                 await sqlcmd.ExecuteNonQueryAsync();
-                return (EEmailVerifyStatus)sqlcmd.Parameters["@ReturnValue"].Value;                           
+                return (EStatus)sqlcmd.Parameters["@ReturnValue"].Value;                           
             }
             catch (Exception ex) { throw; }
         }
 
 
 
-        public async Task<EChangePasswordStatus> ChangePassword(ChangePasswordInput changePasswordInput)
+        public async Task<EStatus> ChangePassword(ChangePasswordInput changePasswordInput)
         {
             try
             {
@@ -123,10 +126,50 @@ namespace DataAccessLayer.DatabaseConnection
                 sqlcmd.Parameters.Add(new SqlParameter("@ReturnValue", SqlDbType.Int) { Direction = ParameterDirection.Output });
                 sqlcon.Open();
                 await sqlcmd.ExecuteNonQueryAsync();
-                return (EChangePasswordStatus)sqlcmd.Parameters["@ReturnValue"].Value;
+                return (EStatus)sqlcmd.Parameters["@ReturnValue"].Value;
             }
             catch (Exception ex) { throw; }
         }
+
+
+
+        public async Task SendResetLink(string email)
+        {
+            try
+            {
+                if (await isExist(email.ToUpper()))               
+                    await _emailSender.ExecuteSender(email, "Reset");
+            }
+            catch (Exception ex) { throw; }
+        }
+
+
+
+        public async Task<EStatus> ResetPassword(ResetPasswordInput resetPasswordInput)
+        {
+            try
+            {              
+                bool isTokenExpired = _cryptoProcess.ValidateVerificationToken(resetPasswordInput.Token);
+                if (isTokenExpired) return EStatus.TokenExpired;
+                string decryptedEmail = _cryptoProcess.DecodeHash(resetPasswordInput.EncryptedEmail).ToUpper();
+                Secret newPasswordSecret = await _cryptoProcess.Encrypt_Aes(resetPasswordInput.Password);
+                using SqlConnection sqlcon = new SqlConnection(_connectionString);
+                using SqlCommand sqlcmd = new SqlCommand("SP_RESET_PASSWORD", sqlcon) { CommandType = CommandType.StoredProcedure };
+                sqlcmd.Parameters.AddWithValue("@Email", decryptedEmail);
+                sqlcmd.Parameters.AddWithValue("@Token", resetPasswordInput.Token);
+                sqlcmd.Parameters.AddWithValue("@NewPasswordHash", newPasswordSecret.Cipher);
+                sqlcmd.Parameters.AddWithValue("@NewKey", newPasswordSecret.Key);
+                sqlcmd.Parameters.AddWithValue("@NewIV", newPasswordSecret.IV);
+                sqlcmd.Parameters.Add(new SqlParameter("@ReturnValue", SqlDbType.Int) { Direction = ParameterDirection.Output });
+                sqlcon.Open();
+                await sqlcmd.ExecuteNonQueryAsync();
+                return (EStatus)sqlcmd.Parameters["@ReturnValue"].Value;
+            }
+            catch (Exception ex) { throw; }
+        }
+
+
+
 
 
         #region Private Help Functions

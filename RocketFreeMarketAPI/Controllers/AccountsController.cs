@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Threading.Tasks;
 using DataAccessLayer.Infrastructure;
 using DTO;
@@ -40,26 +41,26 @@ namespace RocketFreeMarketAPI.Controllers
         {
             try
             {
-                ERegisterStatus status = await _conn.Register(registerInput);
+                EStatus status = await _conn.Register(registerInput);
                 switch (status)
                 {
-                    case ERegisterStatus.RegisterSucceeded:
-                        await _emailSender.ExecuteSender(registerInput.Email);
+                    case EStatus.Succeeded:
+                        await _emailSender.ExecuteSender(registerInput.Email, "Email");
                         return Ok(new
                         {
-                            status = ERegisterStatus.RegisterSucceeded,
+                            status = EStatus.Succeeded,
                             message = "Successfully registerd."
                         });
-                    case ERegisterStatus.EmailExists:
+                    case EStatus.EmailExists:
                         return BadRequest(new
                         {
-                            status = ERegisterStatus.EmailExists,
+                            status = EStatus.EmailExists,
                             message = "Account already exists."
                         });
                     default:
                         return BadRequest(new
                         {
-                            status = ERegisterStatus.InternalServerError,
+                            status = EStatus.DatabaseError,
                             message = "Internal server error."
                         });
                 }
@@ -68,7 +69,7 @@ namespace RocketFreeMarketAPI.Controllers
             {
                 return BadRequest(new
                 {
-                    status = ERegisterStatus.InternalServerError,
+                    status = EStatus.DatabaseError,
                     message = ex.Message
                 });
             }
@@ -145,27 +146,27 @@ namespace RocketFreeMarketAPI.Controllers
         {
             if (e == null || t == null)
                 return BadRequest(new {
-                    status = EEmailVerifyStatus.InternalServerError,
+                    status = EStatus.InvalidLink,
                     message = "Invalid link."
                 });
             try
             {
-                EEmailVerifyStatus status = await _conn.ActivateAccount(e, t);
+                EStatus status = await _conn.ActivateAccount(e, t);
                 return status switch
                 {
-                    EEmailVerifyStatus.VerifySucceeded => Ok(new
+                    EStatus.Succeeded => Ok(new
                     {
-                        status = EEmailVerifyStatus.VerifySucceeded,
+                        status = EStatus.Succeeded,
                         message = "Account has been activated."
                     }),
-                    EEmailVerifyStatus.VerifyFailed => BadRequest(new
+                    EStatus.Failed => BadRequest(new
                     {
-                        status = EEmailVerifyStatus.VerifyFailed,
+                        status = EStatus.Failed,
                         message = "Account has already been activated or link expired."
                     }),
                     _ => BadRequest(new
                     {
-                        status = EEmailVerifyStatus.InternalServerError,
+                        status = EStatus.DatabaseError,
                         message = "Internal Server Error."
                     })
                 };
@@ -174,7 +175,7 @@ namespace RocketFreeMarketAPI.Controllers
             {
                 return BadRequest(new
                 {
-                    status = EEmailVerifyStatus.InternalServerError,
+                    status = EStatus.DatabaseError,
                     message = ex.Message
                 });
             }
@@ -191,22 +192,22 @@ namespace RocketFreeMarketAPI.Controllers
             changePasswordInput.Email = email;
             try
             {
-                EChangePasswordStatus status = await _conn.ChangePassword(changePasswordInput);
+                EStatus status = await _conn.ChangePassword(changePasswordInput);
                 return status switch
                 {
-                    EChangePasswordStatus.ChangeSucceeded => Ok(new 
+                    EStatus.Succeeded => Ok(new 
                     { 
-                        status = EChangePasswordStatus.ChangeSucceeded,
+                        status = EStatus.Succeeded,
                         message = "Password successfully changed."
                     }),
-                    EChangePasswordStatus.ChangeFaild => BadRequest(new 
+                    EStatus.Failed => BadRequest(new 
                     { 
-                        status = EChangePasswordStatus.ChangeFaild,
+                        status = EStatus.Failed,
                         message = "Old password does not match."
                     }),
                     _ => BadRequest(new 
                     { 
-                        status = EChangePasswordStatus.InternalServerError,
+                        status = EStatus.DatabaseError,
                         message = "Internal Server Error."
                     })
                 };
@@ -215,12 +216,70 @@ namespace RocketFreeMarketAPI.Controllers
             {
                 return BadRequest(new
                 {
-                    status = EChangePasswordStatus.InternalServerError,
+                    status = EStatus.DatabaseError,
                     message = ex.Message
                 });
             }
         }
 
 
+        
+        [HttpPost("ResetPassword")]
+        public async Task<IActionResult> ResetPassword([FromBody]ResetPasswordInput resetInput)
+        {
+            if (resetInput.EncryptedEmail == null || resetInput.Password == null || resetInput.Token == null)
+                return BadRequest(new
+                {
+                    status = EStatus.InvalidLink,
+                    message = "Invalid Link"
+                });
+            try
+            {
+                EStatus status = await _conn.ResetPassword(resetInput);
+                return status switch
+                {
+                    EStatus.Succeeded => Ok(new
+                    {
+                        status = EStatus.Succeeded,
+                        message = "Password has been successfully reset."
+                    }),
+                    EStatus.Failed => BadRequest(new
+                    {
+                        status = EStatus.Failed,
+                        message = "Password reset failed."
+                    }),
+                    _ => BadRequest(new
+                    {
+                        status = EStatus.DatabaseError,
+                        message = "Password reset failed."
+                    })
+                };
+            }
+            catch(Exception ex)
+            {
+                return BadRequest(new
+                {
+                    status = EStatus.DatabaseError,
+                    message = ex.Message
+                });
+            } 
+        }
+        
+
+
+
+        [HttpPost("ResetPasswordConfirmation")]
+        public async Task<IActionResult> ResetPasswordConfirmation([FromBody]EmailDTO email)
+        {
+            try
+            {
+                await _conn.SendResetLink(email.Email);
+                return Ok();
+            }
+            catch (Exception ex) 
+            {
+                return Ok();
+            }
+        }
     }
 }

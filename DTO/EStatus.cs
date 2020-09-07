@@ -1,11 +1,14 @@
 ﻿
 namespace DTO
 {
-    public enum ERegisterStatus
+    public enum EStatus
     {
-        RegisterSucceeded = 1,
-        EmailExists = -1,
-        InternalServerError = 0
+        Succeeded = 1,
+        Failed = 0,
+        DatabaseError = 500,
+        EmailExists = -10,
+        TokenExpired = -20,
+        InvalidLink = -30
     }
 
     public enum ELoginStatus
@@ -17,17 +20,4 @@ namespace DTO
         IncorrectCredential = -9
     }
 
-    public enum EEmailVerifyStatus
-    {
-        VerifySucceeded = 1,
-        VerifyFailed = 0,
-        InternalServerError = -1
-    }
-
-    public enum EChangePasswordStatus
-    {
-        ChangeSucceeded = 1,
-        ChangeFaild = 0,
-        InternalServerError = -1
-    }
 }

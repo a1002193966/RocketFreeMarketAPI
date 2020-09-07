@@ -5,9 +5,11 @@ namespace DataAccessLayer.Infrastructure
 {
     public interface IAccountConnection
     {
-        Task<ERegisterStatus> Register(RegisterInput registerInput);
+        Task<EStatus> Register(RegisterInput registerInput);
         Task<ELoginStatus> Login(LoginInput loginInput);
-        Task<EEmailVerifyStatus> ActivateAccount(string email, string token);
-        Task<EChangePasswordStatus> ChangePassword(ChangePasswordInput changePasswordInput);
+        Task<EStatus> ActivateAccount(string email, string token);
+        Task<EStatus> ChangePassword(ChangePasswordInput changePasswordInput);
+        Task SendResetLink(string email);
+        Task<EStatus> ResetPassword(ResetPasswordInput resetDTO);
     }
 }
