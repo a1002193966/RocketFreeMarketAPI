@@ -7,6 +7,6 @@ namespace DTO
         public string FirstName { get; set; }
         public string LastName { get; set; }
         public DateTime DOB { get; set; }
-        public int AccountID { get; set; }
+        public string AccountID { get; set; }
     }
 }
