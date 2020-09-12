@@ -22,6 +22,7 @@ namespace RocketFreeMarketAPI.Controllers
         private readonly IAccountConnection _conn;
         private readonly IEmailSender _emailSender;
         private readonly ILoginToken _loginToken;
+
         public AccountsController(IAccountConnection conn, IEmailSender emailSender, ILoginToken loginToken)
         {
             _conn = conn;
