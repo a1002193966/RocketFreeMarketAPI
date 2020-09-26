@@ -48,7 +48,6 @@ namespace DataAccessLayer.DatabaseConnection
                 using SqlCommand sqlcmd = new SqlCommand("SP_REGISTER", sqlcon) { CommandType = CommandType.StoredProcedure };
                 sqlcmd.Parameters.AddWithValue("@FirstName", registerInput.FirstName);
                 sqlcmd.Parameters.AddWithValue("@LastName", registerInput.LastName);
-                sqlcmd.Parameters.AddWithValue("@DOB", registerInput.DOB);
                 sqlcmd.Parameters.AddWithValue("@PhoneNumber", registerInput.PhoneNumber);
                 sqlcmd.Parameters.AddWithValue("@Email", registerInput.Email);
                 sqlcmd.Parameters.AddWithValue("@PasswordHash", secret.Cipher);
