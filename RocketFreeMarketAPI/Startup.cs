@@ -49,8 +49,9 @@ namespace RocketFreeMarketAPI
                     IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Configuration.GetSection("JWT").GetSection("Key").Value))
                 };
             });
-            services.AddSingleton<IAccountConnection, AccountConnection>();
-            services.AddSingleton<IUserConnection, UserConnection>();
+            services.AddTransient<IAccountConnection, AccountConnection>();
+            services.AddTransient<IUserConnection, UserConnection>();
+            services.AddTransient<IProductPostConnection, ProductPostConnection>();
             services.AddTransient<ICryptoProcess, CryptoProcess>();
             services.AddTransient<IEmailSender, EmailSender>();
             services.AddTransient<ILoginToken, LoginToken>();

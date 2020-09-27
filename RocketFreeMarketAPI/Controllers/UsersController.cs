@@ -27,7 +27,8 @@ namespace RocketFreeMarketAPI.Controllers
             _conn = conn;
         }
 
-        //GET <UserController>/{email}
+        //GET <UserController>/
+        //With Token
         [Authorize]
         [HttpGet]
         public async Task<User> GetProfile()
@@ -46,6 +47,7 @@ namespace RocketFreeMarketAPI.Controllers
         }
 
         // PUT <UsersController>
+        [Authorize]
         [HttpPut("UpdateProfile")]
         public async Task<bool> UpdateProfile([FromBody]ProfileDTO profile)
         {

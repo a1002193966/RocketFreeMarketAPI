@@ -38,7 +38,7 @@ namespace RocketFreeMarketAPI.Controllers
         // Register <AccountsController>/register
         // </summary>
         [HttpPost("register")]
-        public async Task<IActionResult> Register([FromBody] RegisterInput registerInput)
+        public async Task<IActionResult> Register([FromBody]RegisterInput registerInput)
         {
             try
             {
@@ -86,7 +86,7 @@ namespace RocketFreeMarketAPI.Controllers
         // Login <AccountsController>/login
         // </summary>
         [HttpPost("login")]
-        public async Task<IActionResult> Login([FromBody] LoginInput loginInput)
+        public async Task<IActionResult> Login([FromBody]LoginInput loginInput)
         {
             try
             {
