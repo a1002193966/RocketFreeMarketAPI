@@ -22,7 +22,27 @@ namespace RocketFreeMarketAPI.Controllers
             _conn = conn;
         }
 
-        // POST <ProductsController>
+
+        // GET <ProductsController>/GetMyListing
+        [Authorize]
+        [HttpGet("GetMyListing")]
+        public async Task<List<MyPost>> GetMyListing()
+        {
+            ClaimsIdentity identity = HttpContext.User.Identity as ClaimsIdentity;
+            List<Claim> claims = identity.Claims.ToList();
+            string email = claims[0].Value.ToUpper();
+            try
+            {
+                return await _conn.GetMyListing(email);
+            }
+            catch (Exception ex)
+            {
+                return null;
+            }
+        }
+
+
+        // POST <ProductsController>/NewProductPost
         [Authorize]
         [HttpPost("NewProductPost")]
         public async Task<IActionResult> NewProductPost([FromBody]ProductPost productPost)
