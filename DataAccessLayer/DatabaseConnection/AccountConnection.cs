@@ -181,7 +181,8 @@ namespace DataAccessLayer.DatabaseConnection
             byte[] IV = null;
             byte[] Key = null;
             using SqlConnection sqlcon = new SqlConnection(_connectionString);
-            string query = "SELECT AesIV, AesKey FROM [Account] JOIN [Access] ON NormalizedEmail = @Email";
+            string query = "SELECT A.AesIV, B.AesKey FROM [Account] AS A JOIN [Access] AS B "+
+                "ON A.AccountID = B.AccountID AND NormalizedEmail = @Email";
             using SqlCommand sqlcmd = new SqlCommand(query, sqlcon);
             sqlcmd.Parameters.AddWithValue("@Email", email.ToUpper());
             try
