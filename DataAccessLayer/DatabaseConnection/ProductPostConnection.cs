@@ -3,8 +3,10 @@ using DTO;
 using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.Design;
 using System.Data;
 using System.Data.SqlClient;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -17,6 +19,41 @@ namespace DataAccessLayer.DatabaseConnection
         public ProductPostConnection(IConfiguration configuration)
         {
             _connectionString = configuration.GetConnectionString("DefaultConnection");
+        }
+
+
+        public async Task<List<MyPost>> GetMyListing(string email)
+        {
+            try
+            {
+                int userId = await getUserId(email);
+                List<MyPost> myListing = new List<MyPost>();
+                using SqlConnection sqlcon = new SqlConnection(_connectionString);
+                string query = "SELECT PostID, LastUpdateDate, City, State, Category, Price, "+
+                    "Subject, Content, ViewCount FROM [Product_Post] WHERE UserID = @UserID";
+                using SqlCommand sqlcmd = new SqlCommand(query, sqlcon);
+                sqlcmd.Parameters.AddWithValue("@UserID", userId);            
+                sqlcon.Open();
+                using SqlDataReader reader = await sqlcmd.ExecuteReaderAsync();
+                while (await reader.ReadAsync())
+                {
+                    MyPost post = new MyPost()
+                    {
+                        PostID = (int)reader["PostID"],
+                        LastUpdateDate = (DateTime)reader["LastUpdateDate"],
+                        City = (string)reader["City"],
+                        State = (string)reader["State"],
+                        Category = (string)reader["Category"],
+                        Price = (decimal)reader["Price"],
+                        Subject = (string)reader["Subject"],
+                        Content = (string)reader["Content"],
+                        ViewCount = (int)reader["ViewCount"]
+                    };
+                    myListing.Add(post);
+                }
+                return myListing;
+            }
+            catch (Exception ex) { throw; }
         }
 
 
@@ -52,7 +89,7 @@ namespace DataAccessLayer.DatabaseConnection
             {
                 int userId = 0;
                 using SqlConnection sqlcon = new SqlConnection(_connectionString);
-                string query = "SELECT [UserID] FROM [User] AS u JOIN [Account] AS a ON a.AccountID = u.AccountID AND Email = @Email";
+                string query = "SELECT [UserID] FROM [User] AS U JOIN [Account] AS A ON A.AccountID = U.AccountID AND A.NormalizedEmail = @Email";
                 using SqlCommand sqlcmd = new SqlCommand(query, sqlcon);
                 sqlcmd.Parameters.AddWithValue("@Email", email);
                 sqlcon.Open();
