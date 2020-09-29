@@ -22,6 +22,41 @@ namespace DataAccessLayer.DatabaseConnection
         }
 
 
+        public async Task<MyPost> GetPost(string email, int postID)
+        {
+            try
+            {
+                int userId = await getUserId(email);
+                MyPost post = null;
+                using SqlConnection sqlcon = new SqlConnection(_connectionString);
+                string query = "SELECT PostID, LastUpdateDate, City, State, Category, Price, " +
+                    "Subject, Content, ViewCount FROM [Product_Post] WHERE UserID = @UserID AND PostID = @PostID";
+                using SqlCommand sqlcmd = new SqlCommand(query, sqlcon);
+                sqlcmd.Parameters.AddWithValue("@UserID", userId);
+                sqlcmd.Parameters.AddWithValue("@PostID", postID);
+                sqlcon.Open();
+                using SqlDataReader reader = await sqlcmd.ExecuteReaderAsync();
+                while (await reader.ReadAsync())
+                {
+                    post = new MyPost()
+                    {
+                        PostID = (int)reader["PostID"],
+                        LastUpdateDate = (DateTime)reader["LastUpdateDate"],
+                        City = (string)reader["City"],
+                        State = (string)reader["State"],
+                        Category = (string)reader["Category"],
+                        Price = (decimal)reader["Price"],
+                        Subject = (string)reader["Subject"],
+                        Content = (string)reader["Content"],
+                        ViewCount = (int)reader["ViewCount"]
+                    };
+                }
+                return post;
+            }
+            catch (Exception ex) { throw; }
+        }
+
+
         public async Task<List<MyPost>> GetMyListing(string email)
         {
             try

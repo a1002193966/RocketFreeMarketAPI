@@ -23,14 +23,29 @@ namespace RocketFreeMarketAPI.Controllers
         }
 
 
+        // GET <ProductsController>/GetPost/{postID}
+        [Authorize]
+        [HttpGet("GetPost/{postId}")]
+        public async Task<MyPost> GetPost([FromRoute]int postId)
+        {
+            string email = getEmailFromToken();
+            try
+            {
+                return await _conn.GetPost(email, postId);
+            }
+            catch (Exception ex)
+            {
+                return null;
+            }
+        }
+
+
         // GET <ProductsController>/GetMyListing
         [Authorize]
         [HttpGet("GetMyListing")]
         public async Task<List<MyPost>> GetMyListing()
         {
-            ClaimsIdentity identity = HttpContext.User.Identity as ClaimsIdentity;
-            List<Claim> claims = identity.Claims.ToList();
-            string email = claims[0].Value.ToUpper();
+            string email = getEmailFromToken();
             try
             {
                 return await _conn.GetMyListing(email);
@@ -47,9 +62,7 @@ namespace RocketFreeMarketAPI.Controllers
         [HttpPost("NewProductPost")]
         public async Task<IActionResult> NewProductPost([FromBody]ProductPost productPost)
         {
-            ClaimsIdentity identity = HttpContext.User.Identity as ClaimsIdentity;
-            List<Claim> claims = identity.Claims.ToList();
-            string email = claims[0].Value.ToUpper();
+            string email = getEmailFromToken();
             try
             {
                 EStatus status = await _conn.NewProductPost(productPost, email);
@@ -85,5 +98,18 @@ namespace RocketFreeMarketAPI.Controllers
             }
         }
 
+
+        #region Private Help Function
+
+        [Authorize]
+        private string getEmailFromToken()
+        {
+            ClaimsIdentity identity = HttpContext.User.Identity as ClaimsIdentity;
+            List<Claim> claims = identity.Claims.ToList();
+            string email = claims[0].Value.ToUpper();
+            return email;
+        }
+
+        #endregion
     }
 }
