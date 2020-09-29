@@ -23,7 +23,7 @@ namespace RocketFreeMarketAPI.Controllers
         }
 
 
-        // GET <ProductsController>/GetPost/{postID}
+        // GET <ProductsController>/GetPost/{postId}
         [Authorize]
         [HttpGet("GetPost/{postId}")]
         public async Task<MyPost> GetPost([FromRoute]int postId)
@@ -98,6 +98,47 @@ namespace RocketFreeMarketAPI.Controllers
             }
         }
 
+
+        // PUT <ProductsController>/UpdatePost/{postId}
+        [Authorize]
+        [HttpPut("UpdatePost/{postId}")]
+        public async Task<IActionResult> UpdatePost([FromBody]ProductPost productPost, [FromRoute]int postId)
+        {
+            string email = getEmailFromToken();
+            try
+            {
+                EStatus status = await _conn.UpdatePost(productPost, email, postId);
+                switch (status)
+                {
+                    case EStatus.Succeeded:
+                        return Ok(new
+                        {
+                            status = EStatus.Succeeded,
+                            message = "Successfully Updated."
+                        });
+                    case EStatus.Failed:
+                        return BadRequest(new
+                        {
+                            status = EStatus.Failed,
+                            message = "Something went wrong."
+                        });
+                    default:
+                        return BadRequest(new
+                        {
+                            status = EStatus.DatabaseError,
+                            message = "Internal Server Error."
+                        });
+                }
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new
+                {
+                    status = EStatus.DatabaseError,
+                    message = ex.Message
+                });
+            }
+        }
 
         #region Private Help Function
 

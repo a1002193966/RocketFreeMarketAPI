@@ -115,6 +115,28 @@ namespace DataAccessLayer.DatabaseConnection
         }
 
 
+        public async Task<EStatus> UpdatePost(ProductPost productPost, string email, int postId)
+        {
+            try
+            {
+                int userId = await getUserId(email);
+                using SqlConnection sqlcon = new SqlConnection(_connectionString);
+                using SqlCommand sqlcmd = new SqlCommand("SP_UPDATE_POST", sqlcon) { CommandType = CommandType.StoredProcedure };
+                sqlcmd.Parameters.AddWithValue("@State", productPost.State);
+                sqlcmd.Parameters.AddWithValue("@City", productPost.City);
+                sqlcmd.Parameters.AddWithValue("@Subject", productPost.Subject);
+                sqlcmd.Parameters.AddWithValue("@Category", productPost.Category);
+                sqlcmd.Parameters.AddWithValue("@Price", productPost.Price);
+                sqlcmd.Parameters.AddWithValue("@Content", productPost.Content);
+                sqlcmd.Parameters.AddWithValue("@UserID", userId);
+                sqlcmd.Parameters.AddWithValue("@PostID", postId);
+                sqlcmd.Parameters.Add(new SqlParameter("@ReturnValue", SqlDbType.Int) { Direction = ParameterDirection.Output });
+                sqlcon.Open();
+                await sqlcmd.ExecuteNonQueryAsync();
+                return (EStatus)sqlcmd.Parameters["@ReturnValue"].Value;
+            }
+            catch (Exception ex) { throw; }
+        }
 
         #region Private Help Function
 
