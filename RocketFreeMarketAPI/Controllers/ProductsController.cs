@@ -140,6 +140,26 @@ namespace RocketFreeMarketAPI.Controllers
             }
         }
 
+
+        // DELETE <ProductsController>/DeletePost/{postId}
+        [Authorize]
+        [HttpDelete("DeletePost/{postId}")]
+        public async Task<IActionResult> DeletePost([FromRoute]int postId)
+        {
+            string email = getEmailFromToken();
+            try
+            {
+                EStatus status = await _conn.DeletePost(email, postId);
+                return Ok(status);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest();
+            }
+        }
+
+
+
         #region Private Help Function
 
         [Authorize]

@@ -12,5 +12,6 @@ namespace DataAccessLayer.Infrastructure
         Task<MyPost> GetPost(string email, int postID);
         Task<List<MyPost>> GetMyListing(string email);
         Task<EStatus> UpdatePost(ProductPost productPost, string email, int postId);
+        Task<EStatus> DeletePost(string email, int postId);
     }
 }

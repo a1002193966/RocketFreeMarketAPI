@@ -138,6 +138,24 @@ namespace DataAccessLayer.DatabaseConnection
             catch (Exception ex) { throw; }
         }
 
+
+        public async Task<EStatus> DeletePost(string email, int postId)
+        {
+            try
+            {
+                int userId = await getUserId(email);            
+                using SqlConnection sqlcon = new SqlConnection(_connectionString);
+                using SqlCommand sqlcmd = new SqlCommand("SP_DELETE_POST", sqlcon) { CommandType = CommandType.StoredProcedure };
+                sqlcmd.Parameters.AddWithValue("@UserID", userId);
+                sqlcmd.Parameters.AddWithValue("@PostID", postId);
+                sqlcmd.Parameters.Add(new SqlParameter("@ReturnValue", SqlDbType.Int) { Direction = ParameterDirection.Output });
+                sqlcon.Open();
+                await sqlcmd.ExecuteNonQueryAsync();
+                return (EStatus)sqlcmd.Parameters["@ReturnValue"].Value;
+            }
+            catch (Exception ex) { throw; }
+        }
+
         #region Private Help Function
 
         private async Task<int> getUserId(string email)
