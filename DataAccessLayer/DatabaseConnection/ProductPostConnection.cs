@@ -156,6 +156,9 @@ namespace DataAccessLayer.DatabaseConnection
             catch (Exception ex) { throw; }
         }
 
+
+
+
         #region Private Help Function
 
         private async Task<int> getUserId(string email)
