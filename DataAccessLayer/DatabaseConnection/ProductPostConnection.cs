@@ -26,17 +26,17 @@ namespace DataAccessLayer.DatabaseConnection
         {
             try
             {
-                int userId = await getUserId(email);
+                Task<int> userId = getUserId(email);
                 MyPost post = null;
                 using SqlConnection sqlcon = new SqlConnection(_connectionString);
                 string query = "SELECT PostID, LastUpdateDate, City, State, Category, Price, " +
                     "Subject, Content, ViewCount FROM [Product_Post] WHERE UserID = @UserID AND PostID = @PostID";
                 using SqlCommand sqlcmd = new SqlCommand(query, sqlcon);
-                sqlcmd.Parameters.AddWithValue("@UserID", userId);
+                sqlcmd.Parameters.AddWithValue("@UserID", await userId);
                 sqlcmd.Parameters.AddWithValue("@PostID", postID);
                 sqlcon.Open();
                 using SqlDataReader reader = await sqlcmd.ExecuteReaderAsync();
-                while (await reader.ReadAsync())
+                while (reader.Read())
                 {
                     post = new MyPost()
                     {
@@ -61,16 +61,16 @@ namespace DataAccessLayer.DatabaseConnection
         {
             try
             {
-                int userId = await getUserId(email);
+                Task<int> userId = getUserId(email);
                 List<MyPost> myListing = new List<MyPost>();
                 using SqlConnection sqlcon = new SqlConnection(_connectionString);
                 string query = "SELECT PostID, LastUpdateDate, City, State, Category, Price, "+
                     "Subject, Content, ViewCount FROM [Product_Post] WHERE UserID = @UserID";
                 using SqlCommand sqlcmd = new SqlCommand(query, sqlcon);
-                sqlcmd.Parameters.AddWithValue("@UserID", userId);            
+                sqlcmd.Parameters.AddWithValue("@UserID", await userId);            
                 sqlcon.Open();
                 using SqlDataReader reader = await sqlcmd.ExecuteReaderAsync();
-                while (await reader.ReadAsync())
+                while (reader.Read())
                 {
                     MyPost post = new MyPost()
                     {
@@ -96,7 +96,7 @@ namespace DataAccessLayer.DatabaseConnection
         {
             try
             {
-                int userId = await getUserId(email);
+                Task<int> userId = getUserId(email);
                 using SqlConnection sqlcon = new SqlConnection(_connectionString);
                 using SqlCommand sqlcmd = new SqlCommand("SP_NEW_PRODUCT_POST", sqlcon) { CommandType = CommandType.StoredProcedure };
                 sqlcmd.Parameters.AddWithValue("@State", productPost.State);
@@ -105,7 +105,7 @@ namespace DataAccessLayer.DatabaseConnection
                 sqlcmd.Parameters.AddWithValue("@Category", productPost.Category);
                 sqlcmd.Parameters.AddWithValue("@Price", productPost.Price);
                 sqlcmd.Parameters.AddWithValue("@Content", productPost.Content);
-                sqlcmd.Parameters.AddWithValue("@UserID", userId);
+                sqlcmd.Parameters.AddWithValue("@UserID", await userId);
                 sqlcmd.Parameters.Add(new SqlParameter("@ReturnValue", SqlDbType.Int) { Direction = ParameterDirection.Output });
                 sqlcon.Open();
                 await sqlcmd.ExecuteNonQueryAsync();
@@ -119,7 +119,7 @@ namespace DataAccessLayer.DatabaseConnection
         {
             try
             {
-                int userId = await getUserId(email);
+                Task<int> userId = getUserId(email);
                 using SqlConnection sqlcon = new SqlConnection(_connectionString);
                 using SqlCommand sqlcmd = new SqlCommand("SP_UPDATE_POST", sqlcon) { CommandType = CommandType.StoredProcedure };
                 sqlcmd.Parameters.AddWithValue("@State", productPost.State);
@@ -128,8 +128,8 @@ namespace DataAccessLayer.DatabaseConnection
                 sqlcmd.Parameters.AddWithValue("@Category", productPost.Category);
                 sqlcmd.Parameters.AddWithValue("@Price", productPost.Price);
                 sqlcmd.Parameters.AddWithValue("@Content", productPost.Content);
-                sqlcmd.Parameters.AddWithValue("@UserID", userId);
                 sqlcmd.Parameters.AddWithValue("@PostID", postId);
+                sqlcmd.Parameters.AddWithValue("@UserID", await userId);
                 sqlcmd.Parameters.Add(new SqlParameter("@ReturnValue", SqlDbType.Int) { Direction = ParameterDirection.Output });
                 sqlcon.Open();
                 await sqlcmd.ExecuteNonQueryAsync();
@@ -143,11 +143,11 @@ namespace DataAccessLayer.DatabaseConnection
         {
             try
             {
-                int userId = await getUserId(email);            
+                Task<int> userId = getUserId(email);            
                 using SqlConnection sqlcon = new SqlConnection(_connectionString);
-                using SqlCommand sqlcmd = new SqlCommand("SP_DELETE_POST", sqlcon) { CommandType = CommandType.StoredProcedure };
-                sqlcmd.Parameters.AddWithValue("@UserID", userId);
+                using SqlCommand sqlcmd = new SqlCommand("SP_DELETE_POST", sqlcon) { CommandType = CommandType.StoredProcedure };         
                 sqlcmd.Parameters.AddWithValue("@PostID", postId);
+                sqlcmd.Parameters.AddWithValue("@UserID", await userId);
                 sqlcmd.Parameters.Add(new SqlParameter("@ReturnValue", SqlDbType.Int) { Direction = ParameterDirection.Output });
                 sqlcon.Open();
                 await sqlcmd.ExecuteNonQueryAsync();
@@ -172,9 +172,10 @@ namespace DataAccessLayer.DatabaseConnection
                 sqlcmd.Parameters.AddWithValue("@Email", email);
                 sqlcon.Open();
                 using SqlDataReader reader = await sqlcmd.ExecuteReaderAsync();
-                while (await reader.ReadAsync())
+                while (reader.Read())
                 {
                     userId = (int)reader["UserId"];
+                    break;
                 }
                 return userId;
             }
