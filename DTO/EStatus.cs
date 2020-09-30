@@ -1,30 +1,23 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
+﻿
 namespace DTO
 {
-    public enum EEmailRegister
+    public enum EStatus
     {
-        RegistarEmailSuccess = 1,
-        EmailExists = -1,
-        InternalServerError = 0
+        Succeeded = 1,
+        Failed = 0,
+        DatabaseError = 500,
+        EmailExists = -10,
+        TokenExpired = -20,
+        InvalidLink = -30
     }
 
-    public enum EAccountStatus
+    public enum ELoginStatus
     {
-        LoginSuccess = 1,
-        EmailNotActivated = 0,
+        LoginSucceeded = 1,
+        EmailNotVerified = 0,
         AccountLocked = -1,
         AccountDisabled = -7,
-        WrongLoginInfo = -9
-    }
-
-    public enum EActivateAccount
-    {
-        ActivatedAccount = 1,
-        ActivateAccountFailed = 0,
-        InternalServerError = -1
+        IncorrectCredential = -9
     }
 
 }

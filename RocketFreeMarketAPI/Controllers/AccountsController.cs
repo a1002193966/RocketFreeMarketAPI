@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Threading.Tasks;
 using DataAccessLayer.Infrastructure;
 using DTO;
@@ -20,6 +22,7 @@ namespace RocketFreeMarketAPI.Controllers
         private readonly IAccountConnection _conn;
         private readonly IEmailSender _emailSender;
         private readonly ILoginToken _loginToken;
+
         public AccountsController(IAccountConnection conn, IEmailSender emailSender, ILoginToken loginToken)
         {
             _conn = conn;
@@ -35,36 +38,40 @@ namespace RocketFreeMarketAPI.Controllers
         // Register <AccountsController>/register
         // </summary>
         [HttpPost("register")]
-        public async Task<IActionResult> Register([FromBody] RegisterInput registerInput)
+        public async Task<IActionResult> Register([FromBody]RegisterInput registerInput)
         {
             try
             {
-                EEmailRegister status = await _conn.Register(registerInput);
+                EStatus status = await _conn.Register(registerInput);
                 switch (status)
                 {
-                    case EEmailRegister.RegistarEmailSuccess:
-                        await _emailSender.ExecuteSender(registerInput.Email);
-                        return Ok(new { 
-                            status = EEmailRegister.RegistarEmailSuccess,
+                    case EStatus.Succeeded:
+                        await _emailSender.ExecuteSender(registerInput.Email, "Email");
+                        return Ok(new
+                        {
+                            status = EStatus.Succeeded,
                             message = "Successfully registerd."
                         });
-                    case EEmailRegister.EmailExists:
-                        return BadRequest(new {
-                            status = EEmailRegister.EmailExists,
+                    case EStatus.EmailExists:
+                        return BadRequest(new
+                        {
+                            status = EStatus.EmailExists,
                             message = "Account already exists."
                         });
                     default:
-                        return BadRequest(new { 
-                            status = EEmailRegister.InternalServerError, 
+                        return BadRequest(new
+                        {
+                            status = EStatus.DatabaseError,
                             message = "Internal server error."
                         });
                 }
             }
             catch (Exception ex)
             {
-                return BadRequest(new {
-                    status = EEmailRegister.InternalServerError, 
-                    message = ex.Message 
+                return BadRequest(new
+                {
+                    status = EStatus.DatabaseError,
+                    message = ex.Message
                 });
             }
         }
@@ -83,41 +90,47 @@ namespace RocketFreeMarketAPI.Controllers
         {
             try
             {
-                EAccountStatus status = await _conn.Login(loginInput);
+                ELoginStatus status = await _conn.Login(loginInput);
                 switch (status)
                 {
-                    case EAccountStatus.LoginSuccess:
-                        string tokenString = _loginToken.GenerateToken(loginInput);
-                        return Ok(new {
-                            status = EAccountStatus.LoginSuccess,
-                            token = tokenString 
+                    case ELoginStatus.LoginSucceeded:
+                        string tokenString = await _loginToken.GenerateToken(loginInput);
+                        return Ok(new
+                        {
+                            status = ELoginStatus.LoginSucceeded,
+                            token = tokenString
                         });
-                    case EAccountStatus.EmailNotActivated:
-                        return Unauthorized(new { 
-                                status = EAccountStatus.EmailNotActivated,
-                                message = "Please activate your email address." 
-                            });
-                    case EAccountStatus.AccountLocked:
-                        return Unauthorized(new { 
-                            status = EAccountStatus.AccountLocked,
+                    case ELoginStatus.EmailNotVerified:
+                        return Unauthorized(new
+                        {
+                            status = ELoginStatus.EmailNotVerified,
+                            message = "Please activate your email address."
+                        });
+                    case ELoginStatus.AccountLocked:
+                        return Unauthorized(new
+                        {
+                            status = ELoginStatus.AccountLocked,
                             message = "Account locked. Please reset your password."
                         });
-                    case EAccountStatus.AccountDisabled:
-                        return Unauthorized(new {
-                            status = EAccountStatus.AccountDisabled,
-                            message = "Account disabled. Please contact the customer support." 
+                    case ELoginStatus.AccountDisabled:
+                        return Unauthorized(new
+                        {
+                            status = ELoginStatus.AccountDisabled,
+                            message = "Account disabled. Please contact the customer support."
                         });
                     default:
-                        return BadRequest(new {
-                            status = EAccountStatus.WrongLoginInfo,
-                            message = "Incorrect email or password." 
+                        return BadRequest(new
+                        {
+                            status = ELoginStatus.IncorrectCredential,
+                            message = "Incorrect email or password."
                         });
                 }
             }
             catch (Exception ex)
             {
-                return BadRequest(new {
-                    status = EAccountStatus.WrongLoginInfo,
+                return BadRequest(new
+                {
+                    status = ELoginStatus.IncorrectCredential,
                     message = ex.Message
                 });
             }
@@ -133,47 +146,139 @@ namespace RocketFreeMarketAPI.Controllers
         public async Task<IActionResult> ConfirmEmail(string e, string t)
         {
             if (e == null || t == null)
-                return BadRequest( new { 
-                    status = EActivateAccount.InternalServerError,
-                    message = "Invalid link." 
+                return BadRequest(new {
+                    status = EStatus.InvalidLink,
+                    message = "Invalid link."
                 });
             try
             {
-                EActivateAccount status = await _conn.ActivateAccount(e, t);
+                EStatus status = await _conn.ActivateAccount(e, t);
                 return status switch
                 {
-                    EActivateAccount.ActivatedAccount => Ok(new {
-                        status = EActivateAccount.ActivatedAccount, 
-                        message = "Account has been activated." 
+                    EStatus.Succeeded => Ok(new
+                    {
+                        status = EStatus.Succeeded,
+                        message = "Account has been activated."
                     }),
-                    EActivateAccount.ActivateAccountFailed => BadRequest(new {
-                        status = EActivateAccount.ActivateAccountFailed, 
+                    EStatus.Failed => BadRequest(new
+                    {
+                        status = EStatus.Failed,
                         message = "Account has already been activated or link expired."
                     }),
-                    _ => BadRequest(new {
-                        status = EActivateAccount.InternalServerError,
-                        message = "Internal Server Error." 
-                    }),
+                    _ => BadRequest(new
+                    {
+                        status = EStatus.DatabaseError,
+                        message = "Internal Server Error."
+                    })
                 };
             }
             catch (Exception ex)
             {
-                return BadRequest( new { 
-                    status = EActivateAccount.InternalServerError, 
-                    message = ex.Message 
-                } );
+                return BadRequest(new
+                {
+                    status = EStatus.DatabaseError,
+                    message = ex.Message
+                });
             }
         }
 
 
         [Authorize]
-        [HttpPost("test")]
-        public IActionResult test()
+        [HttpPost("ChangePassword")]
+        public async Task<IActionResult> ChangePassword([FromBody]ChangePasswordInput changePasswordInput)
         {
-            var identity = HttpContext.User.Identity as ClaimsIdentity;
-            var cliam = identity.Claims.ToList();
-            var email_value = cliam[0].Value;
-            return Ok(new { email = email_value });
+            ClaimsIdentity identity = HttpContext.User.Identity as ClaimsIdentity;
+            List<Claim> claims = identity.Claims.ToList();
+            string email = claims[0].Value;
+            changePasswordInput.Email = email;
+            try
+            {
+                EStatus status = await _conn.ChangePassword(changePasswordInput);
+                return status switch
+                {
+                    EStatus.Succeeded => Ok(new 
+                    { 
+                        status = EStatus.Succeeded,
+                        message = "Password successfully changed."
+                    }),
+                    EStatus.Failed => BadRequest(new 
+                    { 
+                        status = EStatus.Failed,
+                        message = "Old password does not match."
+                    }),
+                    _ => BadRequest(new 
+                    { 
+                        status = EStatus.DatabaseError,
+                        message = "Internal Server Error."
+                    })
+                };
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new
+                {
+                    status = EStatus.DatabaseError,
+                    message = ex.Message
+                });
+            }
         }
+        
+
+        [HttpPost("ResetPassword")]
+        public async Task<IActionResult> ResetPassword([FromBody]ResetPasswordInput resetInput)
+        {
+            if (resetInput.EncryptedEmail == null || resetInput.Password == null || resetInput.Token == null)
+                return BadRequest(new
+                {
+                    status = EStatus.InvalidLink,
+                    message = "Invalid Link"
+                });
+            try
+            {
+                EStatus status = await _conn.ResetPassword(resetInput);
+                return status switch
+                {
+                    EStatus.Succeeded => Ok(new
+                    {
+                        status = EStatus.Succeeded,
+                        message = "Password has been successfully reset."
+                    }),
+                    EStatus.Failed => BadRequest(new
+                    {
+                        status = EStatus.Failed,
+                        message = "Password reset failed."
+                    }),
+                    _ => BadRequest(new
+                    {
+                        status = EStatus.DatabaseError,
+                        message = "Password reset failed."
+                    })
+                };
+            }
+            catch(Exception ex)
+            {
+                return BadRequest(new
+                {
+                    status = EStatus.DatabaseError,
+                    message = ex.Message
+                });
+            } 
+        }
+        
+
+        [HttpPost("ResetPasswordConfirmation")]
+        public async Task<IActionResult> ResetPasswordConfirmation([FromBody]EmailDTO email)
+        {
+            try
+            {
+                await _conn.SendResetLink(email.Email);
+                return Ok();
+            }
+            catch (Exception ex) 
+            {
+                return Ok();
+            }
+        }
+
     }
 }

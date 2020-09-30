@@ -25,36 +25,33 @@ namespace DataAccessLayer.EmailSender
             _configuration = configuration;
         }
 
-        public async Task<bool> ExecuteSender(string email)
+        public async Task<bool> ExecuteSender(string email, string tokenType)
         {
             try
             {
                 string token = generateToken(email);
-                int result = await saveToken(email, token);
-                await sendEmailConfirmation(email, token);
+                int result = await saveToken(email, token, tokenType);
+                await sendEmailConfirmation(email, token, tokenType);
                 return result > 0;
             }
-            catch (Exception)
-            {
-                throw;
-            }
+            catch (Exception ex) { throw; }
         }
 
 
         #region Private Help Functions
 
-        private async Task sendEmailConfirmation(string email, string token)
+        private async Task sendEmailConfirmation(string email, string token, string tokenType)
         {
             SmtpPackage smtpPackage = JsonConvert.DeserializeObject<SmtpPackage>(_configuration.GetSection("SMTP").Value);
-
             using MailMessage mail = new MailMessage();
-            using SmtpClient smtp = new SmtpClient();   
-            
+            using SmtpClient smtp = new SmtpClient();             
             mail.From = new MailAddress(await _cryptoProcess.Decrypt_Aes(smtpPackage.UsernamePackage));
             mail.To.Add(email);
             mail.IsBodyHtml = true;
             mail.Subject = "Rocket Free Market Email Confirmation";
-            mail.Body = string.Format(smtpPackage.EmailBody, string.Format(smtpPackage.ConfirmationLink, _cryptoProcess.EncodeText(email), token));
+            mail.Body = tokenType == "Email" ?
+                string.Format(_configuration["ConfirmEmail:EmailBody"], string.Format(_configuration["ConfirmEmail:ConfirmationLink"], _cryptoProcess.EncodeText(email), token)) :
+                string.Format(_configuration["ResetPasswordConfirmEmail:EmailBody"], string.Format(_configuration["ResetPasswordConfirmEmail:ConfirmationLink"], _cryptoProcess.EncodeText(email), token));
 
             smtp.Host = smtpPackage.Host;
             smtp.Port = smtpPackage.Port;
@@ -64,20 +61,26 @@ namespace DataAccessLayer.EmailSender
         }
 
  
-        private async Task<int> saveToken(string email, string token)
+        private async Task<int> saveToken(string email, string token, string tokenType)
         {
             using SqlConnection sqlcon = new SqlConnection(_configuration.GetConnectionString("DefaultConnection"));
-            sqlcon.Open();
-            string cmd = "SP_UPDATE_TOKEN";
-            using SqlCommand sqlcmd = new SqlCommand(cmd, sqlcon)
+            try
             {
-                CommandType = CommandType.StoredProcedure
-            };
-            sqlcmd.Parameters.AddWithValue("@Email", email.ToUpper());
-            sqlcmd.Parameters.AddWithValue("@Token", token);
-            int result = await sqlcmd.ExecuteNonQueryAsync();
-            return result;
+                sqlcon.Open();
+                string cmd = "SP_UPDATE_TOKEN";
+                using SqlCommand sqlcmd = new SqlCommand(cmd, sqlcon)
+                {
+                    CommandType = CommandType.StoredProcedure
+                };
+                sqlcmd.Parameters.AddWithValue("@Email", email.ToUpper());
+                sqlcmd.Parameters.AddWithValue("@Token", token);
+                sqlcmd.Parameters.AddWithValue("@TokenType", tokenType);
+                int result = await sqlcmd.ExecuteNonQueryAsync();
+                return result;
+            }
+            catch (Exception ex) { throw; }
         }
+
 
         private string generateToken(string email)
         {

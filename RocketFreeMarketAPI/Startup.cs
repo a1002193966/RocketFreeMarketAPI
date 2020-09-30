@@ -6,6 +6,7 @@ using DataAccessLayer.Infrastructure;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -29,10 +30,10 @@ namespace RocketFreeMarketAPI
             services.AddCors(options => options.AddPolicy(name: "CorsPolicy",
                                                             builder => {
                                                                 builder
-                                                                .WithOrigins("http://localhost:4200")
+                                                                .WithOrigins("http://localhost:4200", "https://localhost:44358")
                                                                 .AllowAnyMethod()
-                                                                .AllowAnyHeader()
-                                                                .AllowCredentials();
+                                                                .AllowAnyHeader();
+                                                                //.AllowCredentials();
                                                             }));                                                           
             services.AddControllers();
             services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(options =>
@@ -48,8 +49,9 @@ namespace RocketFreeMarketAPI
                     IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Configuration.GetSection("JWT").GetSection("Key").Value))
                 };
             });
-            services.AddSingleton<IAccountConnection, AccountConnection>();
-            services.AddSingleton<IUserConnection, UserConnection>();
+            services.AddTransient<IAccountConnection, AccountConnection>();
+            services.AddTransient<IUserConnection, UserConnection>();
+            services.AddTransient<IProductPostConnection, ProductPostConnection>();
             services.AddTransient<ICryptoProcess, CryptoProcess>();
             services.AddTransient<IEmailSender, EmailSender>();
             services.AddTransient<ILoginToken, LoginToken>();
