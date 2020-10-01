@@ -43,19 +43,19 @@ namespace DataAccessLayer.DatabaseConnection
             try
             {
                 if (await isExist(registerInput.Email.ToUpper())) return EStatus.EmailExists;
-                Secret secret = await _cryptoProcess.Encrypt_Aes(registerInput.Password);
+                Task<Secret> secret = _cryptoProcess.Encrypt_Aes(registerInput.Password);
                 using SqlConnection sqlcon = new SqlConnection(_connectionString);
                 using SqlCommand sqlcmd = new SqlCommand("SP_REGISTER", sqlcon) { CommandType = CommandType.StoredProcedure };
                 sqlcmd.Parameters.AddWithValue("@FirstName", registerInput.FirstName);
                 sqlcmd.Parameters.AddWithValue("@LastName", registerInput.LastName);
                 sqlcmd.Parameters.AddWithValue("@PhoneNumber", registerInput.PhoneNumber);
                 sqlcmd.Parameters.AddWithValue("@Email", registerInput.Email);
-                sqlcmd.Parameters.AddWithValue("@PasswordHash", secret.Cipher);
-                sqlcmd.Parameters.AddWithValue("@AesIV", secret.IV);
-                sqlcmd.Parameters.AddWithValue("@AesKey", secret.Key);
+                sqlcmd.Parameters.AddWithValue("@PasswordHash", (await secret).Cipher);
+                sqlcmd.Parameters.AddWithValue("@AesIV", (await secret).IV);
+                sqlcmd.Parameters.AddWithValue("@AesKey", (await secret).Key);
                 sqlcmd.Parameters.Add(new SqlParameter("@ReturnValue", SqlDbType.Int) { Direction = ParameterDirection.Output });
                 sqlcon.Open();
-                await sqlcmd.ExecuteNonQueryAsync();              
+                sqlcmd.ExecuteNonQuery();              
                 return (EStatus)sqlcmd.Parameters["@ReturnValue"].Value;
             }
             catch (Exception ex) { throw; }       
@@ -116,15 +116,15 @@ namespace DataAccessLayer.DatabaseConnection
         {
             try
             {
-                byte[] oldPasswordHash = await getPasswordHash(changePasswordInput.Email, changePasswordInput.OldPassword);
-                Secret newPasswordSecret = await _cryptoProcess.Encrypt_Aes(changePasswordInput.NewPassword);
+                Task<byte[]> oldPasswordHash = getPasswordHash(changePasswordInput.Email, changePasswordInput.OldPassword);
+                Task<Secret> newPasswordSecret = _cryptoProcess.Encrypt_Aes(changePasswordInput.NewPassword);
                 using SqlConnection sqlcon = new SqlConnection(_connectionString);
                 using SqlCommand sqlcmd = new SqlCommand("SP_CHANGE_PASSWORD", sqlcon) { CommandType = CommandType.StoredProcedure };
                 sqlcmd.Parameters.AddWithValue("@Email", changePasswordInput.Email.ToUpper());
-                sqlcmd.Parameters.AddWithValue("@OldPasswordHash", oldPasswordHash);
-                sqlcmd.Parameters.AddWithValue("@NewPasswordHash", newPasswordSecret.Cipher);
-                sqlcmd.Parameters.AddWithValue("@NewKey", newPasswordSecret.Key);
-                sqlcmd.Parameters.AddWithValue("@NewIV", newPasswordSecret.IV);
+                sqlcmd.Parameters.AddWithValue("@OldPasswordHash", await oldPasswordHash);
+                sqlcmd.Parameters.AddWithValue("@NewPasswordHash", (await newPasswordSecret).Cipher);
+                sqlcmd.Parameters.AddWithValue("@NewKey", (await newPasswordSecret).Key);
+                sqlcmd.Parameters.AddWithValue("@NewIV", (await newPasswordSecret).IV);
                 sqlcmd.Parameters.Add(new SqlParameter("@ReturnValue", SqlDbType.Int) { Direction = ParameterDirection.Output });
                 sqlcon.Open();
                 await sqlcmd.ExecuteNonQueryAsync();
@@ -154,14 +154,14 @@ namespace DataAccessLayer.DatabaseConnection
                 bool isTokenExpired = _cryptoProcess.ValidateVerificationToken(resetPasswordInput.Token);
                 if (isTokenExpired) return EStatus.TokenExpired;
                 string decryptedEmail = _cryptoProcess.DecodeHash(resetPasswordInput.EncryptedEmail).ToUpper();
-                Secret newPasswordSecret = await _cryptoProcess.Encrypt_Aes(resetPasswordInput.Password);
+                Task<Secret> newPasswordSecret = _cryptoProcess.Encrypt_Aes(resetPasswordInput.Password);
                 using SqlConnection sqlcon = new SqlConnection(_connectionString);
                 using SqlCommand sqlcmd = new SqlCommand("SP_RESET_PASSWORD", sqlcon) { CommandType = CommandType.StoredProcedure };
                 sqlcmd.Parameters.AddWithValue("@Email", decryptedEmail);
                 sqlcmd.Parameters.AddWithValue("@Token", resetPasswordInput.Token);
-                sqlcmd.Parameters.AddWithValue("@NewPasswordHash", newPasswordSecret.Cipher);
-                sqlcmd.Parameters.AddWithValue("@NewKey", newPasswordSecret.Key);
-                sqlcmd.Parameters.AddWithValue("@NewIV", newPasswordSecret.IV);
+                sqlcmd.Parameters.AddWithValue("@NewPasswordHash", (await newPasswordSecret).Cipher);
+                sqlcmd.Parameters.AddWithValue("@NewKey", (await newPasswordSecret).Key);
+                sqlcmd.Parameters.AddWithValue("@NewIV", (await newPasswordSecret).IV);
                 sqlcmd.Parameters.Add(new SqlParameter("@ReturnValue", SqlDbType.Int) { Direction = ParameterDirection.Output });
                 sqlcon.Open();
                 await sqlcmd.ExecuteNonQueryAsync();
@@ -181,14 +181,15 @@ namespace DataAccessLayer.DatabaseConnection
             byte[] IV = null;
             byte[] Key = null;
             using SqlConnection sqlcon = new SqlConnection(_connectionString);
-            string query = "SELECT AesIV, AesKey FROM [Account] JOIN [Access] ON NormalizedEmail = @Email";
+            string query = "SELECT A.AesIV, B.AesKey FROM [Account] AS A JOIN [Access] AS B "+
+                "ON A.AccountID = B.AccountID AND NormalizedEmail = @Email";
             using SqlCommand sqlcmd = new SqlCommand(query, sqlcon);
             sqlcmd.Parameters.AddWithValue("@Email", email.ToUpper());
             try
             {
                 sqlcon.Open();
-                using SqlDataReader reader = await sqlcmd.ExecuteReaderAsync();
-                while(await reader.ReadAsync())
+                using SqlDataReader reader = sqlcmd.ExecuteReader();
+                while(reader.Read())
                 {
                     IV = (byte[])reader["AesIV"];
                     Key = (byte[])reader["AesKey"];
@@ -210,7 +211,7 @@ namespace DataAccessLayer.DatabaseConnection
                 sqlcon.Open();
                 sqlcmd.Parameters.AddWithValue("@NormalizedEmail", email.ToUpper());
                 using SqlDataReader reader = await sqlcmd.ExecuteReaderAsync();
-                return await reader.ReadAsync();
+                return reader.Read();
             }
             catch (Exception ex) { throw; }
         }

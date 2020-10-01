@@ -43,12 +43,8 @@ namespace DataAccessLayer.DatabaseConnection
                 }
                 return user;
             }
-            catch (Exception ex)
-            {
-                throw;
-            }
+            catch (Exception ex) { throw; }
         }
-
 
 
         public async Task<bool> UpdateProfile(ProfileDTO profile)
@@ -66,10 +62,7 @@ namespace DataAccessLayer.DatabaseConnection
                 int result = await sqlcmd.ExecuteNonQueryAsync();
                 return result > 0;
             }
-            catch(Exception ex)
-            {
-                throw;
-            }
+            catch(Exception ex) { throw; }
         }
     }
 }

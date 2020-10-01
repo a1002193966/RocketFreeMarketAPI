@@ -8,7 +8,6 @@ using DTO;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-// For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
 namespace RocketFreeMarketAPI.Controllers
 {
@@ -23,14 +22,29 @@ namespace RocketFreeMarketAPI.Controllers
         }
 
 
+        // GET <ProductsController>/GetPost/{postId}
+        [Authorize]
+        [HttpGet("GetPost/{postId}")]
+        public async Task<MyPost> GetPost([FromRoute]int postId)
+        {
+            string email = getEmailFromToken();
+            try
+            {
+                return await _conn.GetPost(email, postId);
+            }
+            catch (Exception ex)
+            {
+                return null;
+            }
+        }
+
+
         // GET <ProductsController>/GetMyListing
         [Authorize]
         [HttpGet("GetMyListing")]
         public async Task<List<MyPost>> GetMyListing()
         {
-            ClaimsIdentity identity = HttpContext.User.Identity as ClaimsIdentity;
-            List<Claim> claims = identity.Claims.ToList();
-            string email = claims[0].Value.ToUpper();
+            string email = getEmailFromToken();
             try
             {
                 return await _conn.GetMyListing(email);
@@ -47,9 +61,7 @@ namespace RocketFreeMarketAPI.Controllers
         [HttpPost("NewProductPost")]
         public async Task<IActionResult> NewProductPost([FromBody]ProductPost productPost)
         {
-            ClaimsIdentity identity = HttpContext.User.Identity as ClaimsIdentity;
-            List<Claim> claims = identity.Claims.ToList();
-            string email = claims[0].Value.ToUpper();
+            string email = getEmailFromToken();
             try
             {
                 EStatus status = await _conn.NewProductPost(productPost, email);
@@ -85,5 +97,81 @@ namespace RocketFreeMarketAPI.Controllers
             }
         }
 
+
+        // PUT <ProductsController>/UpdatePost/{postId}
+        [Authorize]
+        [HttpPut("UpdatePost/{postId}")]
+        public async Task<IActionResult> UpdatePost([FromBody]ProductPost productPost, [FromRoute]int postId)
+        {
+            string email = getEmailFromToken();
+            try
+            {
+                EStatus status = await _conn.UpdatePost(productPost, email, postId);
+                switch (status)
+                {
+                    case EStatus.Succeeded:
+                        return Ok(new
+                        {
+                            status = EStatus.Succeeded,
+                            message = "Successfully Updated."
+                        });
+                    case EStatus.Failed:
+                        return BadRequest(new
+                        {
+                            status = EStatus.Failed,
+                            message = "Something went wrong."
+                        });
+                    default:
+                        return BadRequest(new
+                        {
+                            status = EStatus.DatabaseError,
+                            message = "Internal Server Error."
+                        });
+                }
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new
+                {
+                    status = EStatus.DatabaseError,
+                    message = ex.Message
+                });
+            }
+        }
+
+
+        // DELETE <ProductsController>/DeletePost/{postId}
+        [Authorize]
+        [HttpDelete("DeletePost/{postId}")]
+        public async Task<IActionResult> DeletePost([FromRoute]int postId)
+        {
+            string email = getEmailFromToken();
+            try
+            {
+                EStatus status = await _conn.DeletePost(email, postId);
+                return Ok(status);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest();
+            }
+        }
+
+
+
+
+
+        #region Private Help Function
+
+        [Authorize]
+        private string getEmailFromToken()
+        {
+            ClaimsIdentity identity = HttpContext.User.Identity as ClaimsIdentity;
+            List<Claim> claims = identity.Claims.ToList();
+            string email = claims[0].Value.ToUpper();
+            return email;
+        }
+
+        #endregion
     }
 }

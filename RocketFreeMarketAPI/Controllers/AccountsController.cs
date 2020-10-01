@@ -223,6 +223,7 @@ namespace RocketFreeMarketAPI.Controllers
             }
         }
         
+
         [HttpPost("ResetPassword")]
         public async Task<IActionResult> ResetPassword([FromBody]ResetPasswordInput resetInput)
         {
@@ -264,6 +265,7 @@ namespace RocketFreeMarketAPI.Controllers
             } 
         }
         
+
         [HttpPost("ResetPasswordConfirmation")]
         public async Task<IActionResult> ResetPasswordConfirmation([FromBody]EmailDTO email)
         {
