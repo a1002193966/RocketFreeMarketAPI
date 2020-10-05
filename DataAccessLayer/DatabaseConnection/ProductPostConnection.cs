@@ -125,10 +125,9 @@ namespace DataAccessLayer.DatabaseConnection
                     await sqlcmd.ExecuteNonQueryAsync();
                     return (EStatus)sqlcmd.Parameters["@ReturnValue"].Value;
                 }
-                else
-                {
-                    throw new Exception("Category undefined.");
-                }
+                else               
+                    throw new Exception("Category undefined");
+                
             }
             catch (Exception ex) { throw; }
         }
@@ -138,21 +137,26 @@ namespace DataAccessLayer.DatabaseConnection
         {
             try
             {
-                Task<int> userId = getUserId(email);
-                using SqlConnection sqlcon = new SqlConnection(_connectionString);
-                using SqlCommand sqlcmd = new SqlCommand("SP_UPDATE_POST", sqlcon) { CommandType = CommandType.StoredProcedure };
-                sqlcmd.Parameters.AddWithValue("@State", productPost.State);
-                sqlcmd.Parameters.AddWithValue("@City", productPost.City);
-                sqlcmd.Parameters.AddWithValue("@Subject", productPost.Subject);
-                sqlcmd.Parameters.AddWithValue("@CategoryId", category[productPost.Category]);
-                sqlcmd.Parameters.AddWithValue("@Price", productPost.Price);
-                sqlcmd.Parameters.AddWithValue("@Content", productPost.Content);
-                sqlcmd.Parameters.AddWithValue("@PostID", postId);
-                sqlcmd.Parameters.AddWithValue("@UserID", await userId);
-                sqlcmd.Parameters.Add(new SqlParameter("@ReturnValue", SqlDbType.Int) { Direction = ParameterDirection.Output });
-                sqlcon.Open();
-                await sqlcmd.ExecuteNonQueryAsync();
-                return (EStatus)sqlcmd.Parameters["@ReturnValue"].Value;
+                if (category.ContainsKey(productPost.Category))
+                {
+                    Task<int> userId = getUserId(email);
+                    using SqlConnection sqlcon = new SqlConnection(_connectionString);
+                    using SqlCommand sqlcmd = new SqlCommand("SP_UPDATE_POST", sqlcon) { CommandType = CommandType.StoredProcedure };
+                    sqlcmd.Parameters.AddWithValue("@State", productPost.State);
+                    sqlcmd.Parameters.AddWithValue("@City", productPost.City);
+                    sqlcmd.Parameters.AddWithValue("@Subject", productPost.Subject);
+                    sqlcmd.Parameters.AddWithValue("@CategoryId", category[productPost.Category]);
+                    sqlcmd.Parameters.AddWithValue("@Price", productPost.Price);
+                    sqlcmd.Parameters.AddWithValue("@Content", productPost.Content);
+                    sqlcmd.Parameters.AddWithValue("@PostID", postId);
+                    sqlcmd.Parameters.AddWithValue("@UserID", await userId);
+                    sqlcmd.Parameters.Add(new SqlParameter("@ReturnValue", SqlDbType.Int) { Direction = ParameterDirection.Output });
+                    sqlcon.Open();
+                    await sqlcmd.ExecuteNonQueryAsync();
+                    return (EStatus)sqlcmd.Parameters["@ReturnValue"].Value;
+                }
+                else
+                    throw new Exception("Category undefined");
             }
             catch (Exception ex) { throw; }
         }
