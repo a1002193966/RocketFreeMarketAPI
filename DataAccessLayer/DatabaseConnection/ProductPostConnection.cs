@@ -18,14 +18,8 @@ namespace DataAccessLayer.DatabaseConnection
         private readonly string _connectionString;
         private readonly Dictionary<string, int> category = new Dictionary<string, int>()
         {
-            { "Clothing", 1 },
-            { "Electronics & Computers", 2 },
-            { "Health", 3 },
-            { "Food", 4 },
-            { "Beauty", 5 },
-            { "At Home", 6 },
-            { "Rental", 7 },
-            { "Sports & Outdoors", 8 }
+            { "Clothing", 1 }, { "Electronics & Computers", 2 }, { "Health", 3 }, { "Food", 4 }, 
+            { "Beauty", 5 }, { "At Home", 6 }, { "Rental", 7 }, { "Sports & Outdoors", 8 }
         };
 
         public ProductPostConnection(IConfiguration configuration)
@@ -126,8 +120,7 @@ namespace DataAccessLayer.DatabaseConnection
                     return (EStatus)sqlcmd.Parameters["@ReturnValue"].Value;
                 }
                 else               
-                    throw new Exception("Category undefined");
-                
+                    throw new Exception("Category undefined");              
             }
             catch (Exception ex) { throw; }
         }
