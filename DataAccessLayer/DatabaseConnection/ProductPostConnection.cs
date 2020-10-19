@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.ComponentModel.Design;
 using System.Data;
 using System.Data.SqlClient;
+using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
@@ -15,6 +16,11 @@ namespace DataAccessLayer.DatabaseConnection
     public class ProductPostConnection : IProductPostConnection
     {
         private readonly string _connectionString;
+        private readonly Dictionary<string, int> category = new Dictionary<string, int>()
+        {
+            { "Clothing", 1 }, { "Electronics & Computers", 2 }, { "Health", 3 }, { "Food", 4 }, 
+            { "Beauty", 5 }, { "At Home", 6 }, { "Rental", 7 }, { "Sports & Outdoors", 8 }
+        };
 
         public ProductPostConnection(IConfiguration configuration)
         {
@@ -26,17 +32,17 @@ namespace DataAccessLayer.DatabaseConnection
         {
             try
             {
-                int userId = await getUserId(email);
+                Task<int> userId = getUserId(email);
                 MyPost post = null;
                 using SqlConnection sqlcon = new SqlConnection(_connectionString);
-                string query = "SELECT PostID, LastUpdateDate, City, State, Category, Price, " +
+                string query = "SELECT PostID, LastUpdateDate, City, State, CategoryId, Price, " +
                     "Subject, Content, ViewCount FROM [Product_Post] WHERE UserID = @UserID AND PostID = @PostID";
                 using SqlCommand sqlcmd = new SqlCommand(query, sqlcon);
-                sqlcmd.Parameters.AddWithValue("@UserID", userId);
+                sqlcmd.Parameters.AddWithValue("@UserID", await userId);
                 sqlcmd.Parameters.AddWithValue("@PostID", postID);
                 sqlcon.Open();
                 using SqlDataReader reader = await sqlcmd.ExecuteReaderAsync();
-                while (await reader.ReadAsync())
+                while (reader.Read())
                 {
                     post = new MyPost()
                     {
@@ -44,7 +50,7 @@ namespace DataAccessLayer.DatabaseConnection
                         LastUpdateDate = (DateTime)reader["LastUpdateDate"],
                         City = (string)reader["City"],
                         State = (string)reader["State"],
-                        Category = (string)reader["Category"],
+                        Category = category.FirstOrDefault(x => x.Value == (int)reader["CategoryId"]).Key,
                         Price = (decimal)reader["Price"],
                         Subject = (string)reader["Subject"],
                         Content = (string)reader["Content"],
@@ -61,16 +67,16 @@ namespace DataAccessLayer.DatabaseConnection
         {
             try
             {
-                int userId = await getUserId(email);
+                Task<int> userId = getUserId(email);
                 List<MyPost> myListing = new List<MyPost>();
                 using SqlConnection sqlcon = new SqlConnection(_connectionString);
-                string query = "SELECT PostID, LastUpdateDate, City, State, Category, Price, "+
-                    "Subject, Content, ViewCount FROM [Product_Post] WHERE UserID = @UserID";
+                string query = "SELECT PostID, LastUpdateDate, City, State, CategoryId, Price, "+
+                    "Subject, Content, ViewCount FROM [Product_Post] WHERE UserID = @UserID ORDER BY [PostDate] DESC";
                 using SqlCommand sqlcmd = new SqlCommand(query, sqlcon);
-                sqlcmd.Parameters.AddWithValue("@UserID", userId);            
+                sqlcmd.Parameters.AddWithValue("@UserID", await userId);            
                 sqlcon.Open();
                 using SqlDataReader reader = await sqlcmd.ExecuteReaderAsync();
-                while (await reader.ReadAsync())
+                while (reader.Read())
                 {
                     MyPost post = new MyPost()
                     {
@@ -78,7 +84,7 @@ namespace DataAccessLayer.DatabaseConnection
                         LastUpdateDate = (DateTime)reader["LastUpdateDate"],
                         City = (string)reader["City"],
                         State = (string)reader["State"],
-                        Category = (string)reader["Category"],
+                        Category = category.FirstOrDefault(x => x.Value == (int)reader["CategoryId"]).Key,
                         Price = (decimal)reader["Price"],
                         Subject = (string)reader["Subject"],
                         Content = (string)reader["Content"],
@@ -96,20 +102,25 @@ namespace DataAccessLayer.DatabaseConnection
         {
             try
             {
-                int userId = await getUserId(email);
-                using SqlConnection sqlcon = new SqlConnection(_connectionString);
-                using SqlCommand sqlcmd = new SqlCommand("SP_NEW_PRODUCT_POST", sqlcon) { CommandType = CommandType.StoredProcedure };
-                sqlcmd.Parameters.AddWithValue("@State", productPost.State);
-                sqlcmd.Parameters.AddWithValue("@City", productPost.City);
-                sqlcmd.Parameters.AddWithValue("@Subject", productPost.Subject);
-                sqlcmd.Parameters.AddWithValue("@Category", productPost.Category);
-                sqlcmd.Parameters.AddWithValue("@Price", productPost.Price);
-                sqlcmd.Parameters.AddWithValue("@Content", productPost.Content);
-                sqlcmd.Parameters.AddWithValue("@UserID", userId);
-                sqlcmd.Parameters.Add(new SqlParameter("@ReturnValue", SqlDbType.Int) { Direction = ParameterDirection.Output });
-                sqlcon.Open();
-                await sqlcmd.ExecuteNonQueryAsync();
-                return (EStatus)sqlcmd.Parameters["@ReturnValue"].Value;
+                if (category.ContainsKey(productPost.Category))
+                {
+                    Task<int> userId = getUserId(email);
+                    using SqlConnection sqlcon = new SqlConnection(_connectionString);
+                    using SqlCommand sqlcmd = new SqlCommand("SP_NEW_PRODUCT_POST", sqlcon) { CommandType = CommandType.StoredProcedure };
+                    sqlcmd.Parameters.AddWithValue("@State", productPost.State);
+                    sqlcmd.Parameters.AddWithValue("@City", productPost.City);
+                    sqlcmd.Parameters.AddWithValue("@Subject", productPost.Subject);
+                    sqlcmd.Parameters.AddWithValue("@CategoryId", category[productPost.Category]);
+                    sqlcmd.Parameters.AddWithValue("@Price", productPost.Price);
+                    sqlcmd.Parameters.AddWithValue("@Content", productPost.Content);
+                    sqlcmd.Parameters.AddWithValue("@UserID", await userId);
+                    sqlcmd.Parameters.Add(new SqlParameter("@ReturnValue", SqlDbType.Int) { Direction = ParameterDirection.Output });
+                    sqlcon.Open();
+                    await sqlcmd.ExecuteNonQueryAsync();
+                    return (EStatus)sqlcmd.Parameters["@ReturnValue"].Value;
+                }
+                else               
+                    throw new Exception("Category undefined");              
             }
             catch (Exception ex) { throw; }
         }
@@ -119,21 +130,26 @@ namespace DataAccessLayer.DatabaseConnection
         {
             try
             {
-                int userId = await getUserId(email);
-                using SqlConnection sqlcon = new SqlConnection(_connectionString);
-                using SqlCommand sqlcmd = new SqlCommand("SP_UPDATE_POST", sqlcon) { CommandType = CommandType.StoredProcedure };
-                sqlcmd.Parameters.AddWithValue("@State", productPost.State);
-                sqlcmd.Parameters.AddWithValue("@City", productPost.City);
-                sqlcmd.Parameters.AddWithValue("@Subject", productPost.Subject);
-                sqlcmd.Parameters.AddWithValue("@Category", productPost.Category);
-                sqlcmd.Parameters.AddWithValue("@Price", productPost.Price);
-                sqlcmd.Parameters.AddWithValue("@Content", productPost.Content);
-                sqlcmd.Parameters.AddWithValue("@UserID", userId);
-                sqlcmd.Parameters.AddWithValue("@PostID", postId);
-                sqlcmd.Parameters.Add(new SqlParameter("@ReturnValue", SqlDbType.Int) { Direction = ParameterDirection.Output });
-                sqlcon.Open();
-                await sqlcmd.ExecuteNonQueryAsync();
-                return (EStatus)sqlcmd.Parameters["@ReturnValue"].Value;
+                if (category.ContainsKey(productPost.Category))
+                {
+                    Task<int> userId = getUserId(email);
+                    using SqlConnection sqlcon = new SqlConnection(_connectionString);
+                    using SqlCommand sqlcmd = new SqlCommand("SP_UPDATE_POST", sqlcon) { CommandType = CommandType.StoredProcedure };
+                    sqlcmd.Parameters.AddWithValue("@State", productPost.State);
+                    sqlcmd.Parameters.AddWithValue("@City", productPost.City);
+                    sqlcmd.Parameters.AddWithValue("@Subject", productPost.Subject);
+                    sqlcmd.Parameters.AddWithValue("@CategoryId", category[productPost.Category]);
+                    sqlcmd.Parameters.AddWithValue("@Price", productPost.Price);
+                    sqlcmd.Parameters.AddWithValue("@Content", productPost.Content);
+                    sqlcmd.Parameters.AddWithValue("@PostID", postId);
+                    sqlcmd.Parameters.AddWithValue("@UserID", await userId);
+                    sqlcmd.Parameters.Add(new SqlParameter("@ReturnValue", SqlDbType.Int) { Direction = ParameterDirection.Output });
+                    sqlcon.Open();
+                    await sqlcmd.ExecuteNonQueryAsync();
+                    return (EStatus)sqlcmd.Parameters["@ReturnValue"].Value;
+                }
+                else
+                    throw new Exception("Category undefined");
             }
             catch (Exception ex) { throw; }
         }
@@ -143,11 +159,11 @@ namespace DataAccessLayer.DatabaseConnection
         {
             try
             {
-                int userId = await getUserId(email);            
+                Task<int> userId = getUserId(email);            
                 using SqlConnection sqlcon = new SqlConnection(_connectionString);
-                using SqlCommand sqlcmd = new SqlCommand("SP_DELETE_POST", sqlcon) { CommandType = CommandType.StoredProcedure };
-                sqlcmd.Parameters.AddWithValue("@UserID", userId);
+                using SqlCommand sqlcmd = new SqlCommand("SP_DELETE_POST", sqlcon) { CommandType = CommandType.StoredProcedure };         
                 sqlcmd.Parameters.AddWithValue("@PostID", postId);
+                sqlcmd.Parameters.AddWithValue("@UserID", await userId);
                 sqlcmd.Parameters.Add(new SqlParameter("@ReturnValue", SqlDbType.Int) { Direction = ParameterDirection.Output });
                 sqlcon.Open();
                 await sqlcmd.ExecuteNonQueryAsync();
@@ -155,6 +171,9 @@ namespace DataAccessLayer.DatabaseConnection
             }
             catch (Exception ex) { throw; }
         }
+
+
+
 
         #region Private Help Function
 
@@ -169,9 +188,10 @@ namespace DataAccessLayer.DatabaseConnection
                 sqlcmd.Parameters.AddWithValue("@Email", email);
                 sqlcon.Open();
                 using SqlDataReader reader = await sqlcmd.ExecuteReaderAsync();
-                while (await reader.ReadAsync())
+                while (reader.Read())
                 {
                     userId = (int)reader["UserId"];
+                    break;
                 }
                 return userId;
             }
