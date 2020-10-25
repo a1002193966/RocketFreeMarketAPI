@@ -6,7 +6,6 @@ using DataAccessLayer.Infrastructure;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -30,7 +29,7 @@ namespace RocketFreeMarketAPI
             services.AddCors(options => options.AddPolicy(name: "CorsPolicy",
                                                             builder => {
                                                                 builder
-                                                                .WithOrigins("http://localhost:4200", "https://localhost:44358")
+                                                                .WithOrigins("http://localhost:4200", "http://74.208.207.221:4200")
                                                                 .AllowAnyMethod()
                                                                 .AllowAnyHeader();
                                                                 //.AllowCredentials();
