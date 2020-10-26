@@ -145,8 +145,8 @@ namespace DataAccessLayer.DatabaseConnection
                     sqlcmd.Parameters.AddWithValue("@UserID", await userId);
                     sqlcmd.Parameters.Add(new SqlParameter("@ReturnValue", SqlDbType.Int) { Direction = ParameterDirection.Output });
                     sqlcon.Open();
-                    await sqlcmd.ExecuteNonQueryAsync();
-                    return (EStatus)sqlcmd.Parameters["@ReturnValue"].Value;
+                    int result = await sqlcmd.ExecuteNonQueryAsync();
+                    return result > 0 ? EStatus.Succeeded : EStatus.Failed;
                 }
                 else
                     throw new Exception("Category undefined");
