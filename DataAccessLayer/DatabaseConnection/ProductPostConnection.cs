@@ -63,6 +63,39 @@ namespace DataAccessLayer.DatabaseConnection
         }
 
 
+        public async Task<MyPost> GetPostNoAuth(int postID)
+        {
+            try
+            {
+                MyPost post = null;
+                using SqlConnection sqlcon = new SqlConnection(_connectionString);
+                string query = "SELECT PostID, LastUpdateDate, City, State, CategoryId, Price, " +
+                    "Subject, Content, ViewCount FROM [Product_Post] WHERE PostID = @PostID";
+                using SqlCommand sqlcmd = new SqlCommand(query, sqlcon);
+                sqlcmd.Parameters.AddWithValue("@PostID", postID);
+                sqlcon.Open();
+                using SqlDataReader reader = await sqlcmd.ExecuteReaderAsync();
+                while (reader.Read())
+                {
+                    post = new MyPost()
+                    {
+                        PostID = (int)reader["PostID"],
+                        LastUpdateDate = (DateTime)reader["LastUpdateDate"],
+                        City = (string)reader["City"],
+                        State = (string)reader["State"],
+                        Category = category.FirstOrDefault(x => x.Value == (int)reader["CategoryId"]).Key,
+                        Price = (decimal)reader["Price"],
+                        Subject = (string)reader["Subject"],
+                        Content = (string)reader["Content"],
+                        ViewCount = (int)reader["ViewCount"]
+                    };
+                }
+                return post;
+            }
+            catch (Exception ex) { throw; }
+        }
+
+
         public async Task<List<MyPost>> GetMyListing(string email)
         {
             try
@@ -93,6 +126,39 @@ namespace DataAccessLayer.DatabaseConnection
                     myListing.Add(post);
                 }
                 return myListing;
+            }
+            catch (Exception ex) { throw; }
+        }
+
+
+        public async Task<List<MyPost>> GetListing()
+        {
+            List<MyPost> listing = new List<MyPost>();
+            using SqlConnection sqlcon = new SqlConnection(_connectionString);
+            string query = "SELECT TOP(10) PostID, LastUpdateDate, City, State, CategoryId, Price, " +
+                "Subject, Content, ViewCount FROM [Product_Post] ORDER BY [PostDate] DESC";
+            using SqlCommand sqlcmd = new SqlCommand(query, sqlcon);
+            try
+            {
+                sqlcon.Open();
+                using SqlDataReader reader = await sqlcmd.ExecuteReaderAsync();
+                while (reader.Read())
+                {
+                    MyPost post = new MyPost()
+                    {
+                        PostID = (int)reader["PostID"],
+                        LastUpdateDate = (DateTime)reader["LastUpdateDate"],
+                        City = (string)reader["City"],
+                        State = (string)reader["State"],
+                        Category = category.FirstOrDefault(x => x.Value == (int)reader["CategoryId"]).Key,
+                        Price = (decimal)reader["Price"],
+                        Subject = (string)reader["Subject"],
+                        Content = (string)reader["Content"],
+                        ViewCount = (int)reader["ViewCount"]
+                    };
+                    listing.Add(post);
+                }
+                return listing;
             }
             catch (Exception ex) { throw; }
         }
@@ -168,6 +234,53 @@ namespace DataAccessLayer.DatabaseConnection
                 sqlcon.Open();
                 await sqlcmd.ExecuteNonQueryAsync();
                 return (EStatus)sqlcmd.Parameters["@ReturnValue"].Value;
+            }
+            catch (Exception ex) { throw; }
+        }
+
+
+        public async Task<EStatus> NewComment(MyComment comment, string email)
+        {
+            try
+            {
+                Task<int> userId = getUserId(email);
+                string query = "INSERT INTO [Product_Comment] VALUES(@Content, GETDATE(), 0, @PostID, @UserID)";
+                using SqlConnection sqlcon = new SqlConnection(_connectionString);
+                using SqlCommand sqlcmd = new SqlCommand(query, sqlcon);
+                sqlcmd.Parameters.AddWithValue("@Content", comment.Content);
+                sqlcmd.Parameters.AddWithValue("@PostID", comment.PostID);
+                sqlcmd.Parameters.AddWithValue("@UserID", await userId);
+                sqlcon.Open();
+                int result = await sqlcmd.ExecuteNonQueryAsync();
+                return result > 0 ? EStatus.Succeeded : EStatus.Failed;
+            }
+            catch (Exception ex) { throw; }
+        }
+
+
+        public async Task<List<CommentDTO>> GetCommentList(int postId)
+        {
+            List<CommentDTO> commentList = new List<CommentDTO>();
+            string query = "SELECT A.FirstName, A.LastName, B.Content, B.CommentDate FROM [User] AS A JOIN [Product_Comment] AS B ON A.UserID = B.UserID AND B.PostID = @PostID ORDER BY B.CommentDate ASC";
+            using SqlConnection sqlcon = new SqlConnection(_connectionString);
+            using SqlCommand sqlcmd = new SqlCommand(query, sqlcon);
+            sqlcmd.Parameters.AddWithValue("@PostID", postId);
+            try
+            {
+                sqlcon.Open();
+                using SqlDataReader reader = await sqlcmd.ExecuteReaderAsync();
+                while (reader.Read())
+                {
+                    CommentDTO comment = new CommentDTO()
+                    {
+                        FirstName = (string)reader["FirstName"],
+                        LastName = (string)reader["LastName"],
+                        Content = (string)reader["Content"],
+                        CommentDate = (DateTime)reader["CommentDate"]
+                    };
+                    commentList.Add(comment);
+                }
+                return commentList;
             }
             catch (Exception ex) { throw; }
         }
