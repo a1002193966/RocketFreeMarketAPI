@@ -74,7 +74,6 @@ namespace RocketFreeMarketAPI.Controllers
 
 
         // GET <ProductsController>/GetListing
-        [Authorize]
         [HttpGet("GetListing")]
         public async Task<List<MyPost>> GetListing()
         {
