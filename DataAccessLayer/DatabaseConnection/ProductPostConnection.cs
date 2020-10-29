@@ -261,7 +261,7 @@ namespace DataAccessLayer.DatabaseConnection
         public async Task<List<CommentDTO>> GetCommentList(int postId)
         {
             List<CommentDTO> commentList = new List<CommentDTO>();
-            string query = "SELECT A.FirstName, A.LastName, B.Content, B.CommentDate FROM [User] AS A JOIN [Product_Comment] AS B ON A.UserID = B.UserID AND B.PostID = @PostID ORDER BY B.CommentDate ASC";
+            string query = "SELECT A.NormalizedEmail, B.FirstName, B.LastName, C.Content, C.CommentDate FROM [Account] AS A JOIN [User] AS B ON A.AccountID = B.AccountID JOIN [Product_Comment] AS C ON B.UserID = C.UserID AND C.PostID = @PostID ORDER BY C.CommentDate ASC";
             using SqlConnection sqlcon = new SqlConnection(_connectionString);
             using SqlCommand sqlcmd = new SqlCommand(query, sqlcon);
             sqlcmd.Parameters.AddWithValue("@PostID", postId);
@@ -271,8 +271,11 @@ namespace DataAccessLayer.DatabaseConnection
                 using SqlDataReader reader = await sqlcmd.ExecuteReaderAsync();
                 while (reader.Read())
                 {
+                    int indexOfAt = ((string)reader["NormalizedEmail"]).IndexOf('@');
+                    string username = ((string)reader["NormalizedEmail"]).Substring(0, indexOfAt);
                     CommentDTO comment = new CommentDTO()
                     {
+                        Username = username,
                         FirstName = (string)reader["FirstName"],
                         LastName = (string)reader["LastName"],
                         Content = (string)reader["Content"],
