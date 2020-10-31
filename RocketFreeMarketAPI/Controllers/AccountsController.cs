@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
 using System.Security.Cryptography;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using DataAccessLayer.Infrastructure;
@@ -11,7 +12,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-
+using Newtonsoft.Json;
 
 namespace RocketFreeMarketAPI.Controllers
 {
@@ -58,6 +59,12 @@ namespace RocketFreeMarketAPI.Controllers
                         {
                             status = EStatus.EmailExists,
                             message = "Account already exists."
+                        });
+                    case EStatus.ReCaptchaFailed:
+                        return BadRequest(new
+                        {
+                            status = EStatus.ReCaptchaFailed,
+                            message = "ReCaptcha not verified."
                         });
                     default:
                         return BadRequest(new
@@ -118,6 +125,12 @@ namespace RocketFreeMarketAPI.Controllers
                         {
                             status = ELoginStatus.AccountDisabled,
                             message = "Account disabled. Please contact the customer support."
+                        });
+                    case ELoginStatus.ReCaptchaFailed:
+                        return BadRequest(new
+                        {
+                            status = ELoginStatus.ReCaptchaFailed,
+                            message = "ReCaptcha not verified."
                         });
                     default:
                         return BadRequest(new
@@ -265,33 +278,20 @@ namespace RocketFreeMarketAPI.Controllers
                 });
             } 
         }
-        
+
 
         [HttpPost("ResetPasswordConfirmation")]
-        public async Task<IActionResult> ResetPasswordConfirmation([FromBody]EmailDTO email)
+        public async Task<IActionResult> ResetPasswordConfirmation([FromBody]JsonElement e)
         {
             try
-            {
-                await _conn.SendResetLink(email.Email);
+            { 
+                dynamic data = JsonConvert.DeserializeObject(e.GetRawText()) ;
+                await _conn.SendResetLink(data.Email.ToString());
                 return Ok();
             }
             catch (Exception ex) 
             {
                 return Ok();
-            }
-        }
-
-
-        [HttpGet("RecaptchaVerify")]
-        public async Task<bool> RecaptchaVerify([FromQuery]string token)
-        {
-            try
-            {
-                return await _conn.RecaptchaVerify(token);
-            }
-            catch (Exception ex)
-            {
-                return false;
             }
         }
 

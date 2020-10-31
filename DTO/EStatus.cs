@@ -8,7 +8,8 @@ namespace DTO
         DatabaseError = 500,
         EmailExists = -10,
         TokenExpired = -20,
-        InvalidLink = -30
+        InvalidLink = -30,
+        ReCaptchaFailed = -100
     }
 
     public enum ELoginStatus
@@ -17,7 +18,8 @@ namespace DTO
         EmailNotVerified = 0,
         AccountLocked = -1,
         AccountDisabled = -7,
-        IncorrectCredential = -9
+        IncorrectCredential = -9,
+        ReCaptchaFailed = -100
     }
 
 }

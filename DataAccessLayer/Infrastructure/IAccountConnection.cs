@@ -11,6 +11,5 @@ namespace DataAccessLayer.Infrastructure
         Task<EStatus> ChangePassword(ChangePasswordInput changePasswordInput);
         Task SendResetLink(string email);
         Task<EStatus> ResetPassword(ResetPasswordInput resetDTO);
-        Task<bool> RecaptchaVerify(string token);
     }
 }

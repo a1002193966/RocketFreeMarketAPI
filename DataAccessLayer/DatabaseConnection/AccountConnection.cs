@@ -44,6 +44,7 @@ namespace DataAccessLayer.DatabaseConnection
         {
             try
             {
+                if (!await reCaptchaVerify(registerInput.ReCaptchaToken)) return EStatus.ReCaptchaFailed;
                 if (await isExist(registerInput.Email.ToUpper())) return EStatus.EmailExists;
                 Task<Secret> secret = _cryptoProcess.Encrypt_Aes(registerInput.Password);
                 using SqlConnection sqlcon = new SqlConnection(_connectionString);
@@ -75,6 +76,7 @@ namespace DataAccessLayer.DatabaseConnection
         {
             try
             {
+                if (!await reCaptchaVerify(loginInput.ReCaptchaToken)) return ELoginStatus.ReCaptchaFailed;
                 if (!await isExist(loginInput.Email.ToUpper())) return ELoginStatus.IncorrectCredential;
                 byte[] passwordHash = await getPasswordHash(loginInput.Email, loginInput.Password);
                 using SqlConnection sqlcon = new SqlConnection(_connectionString);
@@ -174,7 +176,14 @@ namespace DataAccessLayer.DatabaseConnection
 
 
 
-        public async Task<bool> RecaptchaVerify(string token)
+
+
+
+
+
+        #region Private Help Functions
+
+        private async Task<bool> reCaptchaVerify(string token)
         {
             string key = "6LfYEd0ZAAAAAIzgqOZWKQMJkCX3VvK7JBrRRWIC";
             try
@@ -188,15 +197,11 @@ namespace DataAccessLayer.DatabaseConnection
                 using HttpResponseMessage response = await http.SendAsync(request);
                 string data = await response.Content.ReadAsStringAsync();
                 dynamic obj = JsonConvert.DeserializeObject(data);
-                return obj.success;   
+                return obj.success;
             }
             catch (Exception ex) { throw; }
         }
 
-
-
-
-        #region Private Help Functions
 
         private async Task<byte[]> getPasswordHash(string email, string password)
         {
