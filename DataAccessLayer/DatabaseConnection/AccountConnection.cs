@@ -1,9 +1,11 @@
 ﻿using DataAccessLayer.Infrastructure;
 using DTO;
 using Microsoft.Extensions.Configuration;
+using Newtonsoft.Json;
 using System;
 using System.Data;
 using System.Data.SqlClient;
+using System.Net.Http;
 using System.Reflection.Metadata.Ecma335;
 using System.Threading.Tasks;
 
@@ -170,6 +172,26 @@ namespace DataAccessLayer.DatabaseConnection
             catch (Exception ex) { throw; }
         }
 
+
+
+        public async Task<bool> RecaptchaVerify(string token)
+        {
+            string key = "6LfYEd0ZAAAAAIzgqOZWKQMJkCX3VvK7JBrRRWIC";
+            try
+            {
+                using HttpClient http = new HttpClient();
+                using HttpRequestMessage request = new HttpRequestMessage()
+                {
+                    Method = HttpMethod.Get,
+                    RequestUri = new Uri($"https://www.google.com/recaptcha/api/siteverify?secret={key}&response={token}")
+                };
+                using HttpResponseMessage response = await http.SendAsync(request);
+                string data = await response.Content.ReadAsStringAsync();
+                dynamic obj = JsonConvert.DeserializeObject(data);
+                return obj.success;   
+            }
+            catch (Exception ex) { throw; }
+        }
 
 
 

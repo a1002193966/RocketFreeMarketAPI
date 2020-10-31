@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
 using System.Security.Cryptography;
+using System.Threading;
 using System.Threading.Tasks;
 using DataAccessLayer.Infrastructure;
 using DTO;
@@ -277,6 +278,20 @@ namespace RocketFreeMarketAPI.Controllers
             catch (Exception ex) 
             {
                 return Ok();
+            }
+        }
+
+
+        [HttpGet("RecaptchaVerify")]
+        public async Task<bool> RecaptchaVerify([FromQuery]string token)
+        {
+            try
+            {
+                return await _conn.RecaptchaVerify(token);
+            }
+            catch (Exception ex)
+            {
+                return false;
             }
         }
 
