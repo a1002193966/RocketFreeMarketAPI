@@ -39,6 +39,23 @@ namespace RocketFreeMarketAPI.Controllers
         }
 
 
+        // GET <ProductsController>/GetPostNoAuth/{postId}
+        [Authorize]
+        [HttpGet("GetPostNoAuth/{postId}")]
+        public async Task<MyPost> GetPostNoAuth([FromRoute]int postId)
+        {
+            string email = getEmailFromToken();
+            try
+            {
+                return await _conn.GetPostNoAuth(postId);
+            }
+            catch (Exception ex)
+            {
+                return null;
+            }
+        }
+
+
         // GET <ProductsController>/GetMyListing
         [Authorize]
         [HttpGet("GetMyListing")]
@@ -48,6 +65,21 @@ namespace RocketFreeMarketAPI.Controllers
             try
             {
                 return await _conn.GetMyListing(email);
+            }
+            catch (Exception ex)
+            {
+                return null;
+            }
+        }
+
+
+        // GET <ProductsController>/GetListing
+        [HttpGet("GetListing")]
+        public async Task<List<MyPost>> GetListing()
+        {
+            try
+            {
+                return await _conn.GetListing();
             }
             catch (Exception ex)
             {
@@ -158,6 +190,55 @@ namespace RocketFreeMarketAPI.Controllers
         }
 
 
+        [Authorize]
+        [HttpPost("NewComment")]
+        public async Task<IActionResult> NewComment([FromBody]MyComment comment)
+        {
+            string email = getEmailFromToken();
+            try
+            {
+                EStatus status = await _conn.NewComment(comment, email);
+                switch (status)
+                {
+                    case EStatus.Succeeded:
+                        return Ok(new 
+                        {
+                            status = EStatus.Succeeded,
+                            message = "Comment posted"
+                        });
+                    default:
+                        return BadRequest(new
+                        {
+                            status = EStatus.Failed,
+                            message = "Failed"
+                        });
+                }
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new
+                { 
+                    status = EStatus.DatabaseError,
+                    message = ex.Message
+                });
+            }
+        }
+
+
+        [Authorize]
+        [HttpGet("GetCommentList/{postId}")]
+        public async Task<List<CommentDTO>> GetCommentList([FromRoute]int postId)
+        {
+            try
+            {
+                List<CommentDTO> comments = await _conn.GetCommentList(postId);
+                return comments;
+            }
+            catch (Exception ex)
+            {
+                return null;
+            }
+        }
 
 
 

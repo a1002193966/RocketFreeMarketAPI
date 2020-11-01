@@ -1,13 +1,15 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Text;
 
 namespace DTO
 {
-    public class ProfileDTO
+    public class CommentDTO
     {
         public string Username { get; set; }
         public string FirstName { get; set; }
         public string LastName { get; set; }
-        public DateTime DOB { get; set; }
-        public string AccountID { get; set; }
+        public string Content { get; set; }
+        public DateTime CommentDate { get; set; }
     }
 }

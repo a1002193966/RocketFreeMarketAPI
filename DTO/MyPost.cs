@@ -12,6 +12,7 @@ namespace DTO
         public decimal Price { get; set; }
         public string Subject { get; set; }
         public string Content { get; set; }
+        public string Username { get; set; }
         public int ViewCount { get; set; }
     }
 }

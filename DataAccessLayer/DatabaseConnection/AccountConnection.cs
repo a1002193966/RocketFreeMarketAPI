@@ -1,9 +1,11 @@
 ﻿using DataAccessLayer.Infrastructure;
 using DTO;
 using Microsoft.Extensions.Configuration;
+using Newtonsoft.Json;
 using System;
 using System.Data;
 using System.Data.SqlClient;
+using System.Net.Http;
 using System.Reflection.Metadata.Ecma335;
 using System.Threading.Tasks;
 
@@ -42,10 +44,12 @@ namespace DataAccessLayer.DatabaseConnection
         {
             try
             {
+                if (!await reCaptchaVerify(registerInput.ReCaptchaToken)) return EStatus.ReCaptchaFailed;
                 if (await isExist(registerInput.Email.ToUpper())) return EStatus.EmailExists;
                 Task<Secret> secret = _cryptoProcess.Encrypt_Aes(registerInput.Password);
                 using SqlConnection sqlcon = new SqlConnection(_connectionString);
                 using SqlCommand sqlcmd = new SqlCommand("SP_REGISTER", sqlcon) { CommandType = CommandType.StoredProcedure };
+                sqlcmd.Parameters.AddWithValue("@Username", registerInput.Username);
                 sqlcmd.Parameters.AddWithValue("@FirstName", registerInput.FirstName);
                 sqlcmd.Parameters.AddWithValue("@LastName", registerInput.LastName);
                 sqlcmd.Parameters.AddWithValue("@PhoneNumber", registerInput.PhoneNumber);
@@ -73,6 +77,7 @@ namespace DataAccessLayer.DatabaseConnection
         {
             try
             {
+                if (!await reCaptchaVerify(loginInput.ReCaptchaToken)) return ELoginStatus.ReCaptchaFailed;
                 if (!await isExist(loginInput.Email.ToUpper())) return ELoginStatus.IncorrectCredential;
                 byte[] passwordHash = await getPasswordHash(loginInput.Email, loginInput.Password);
                 using SqlConnection sqlcon = new SqlConnection(_connectionString);
@@ -174,7 +179,30 @@ namespace DataAccessLayer.DatabaseConnection
 
 
 
+
+
+
         #region Private Help Functions
+
+        private async Task<bool> reCaptchaVerify(string token)
+        {
+            string key = "6LfYEd0ZAAAAAIzgqOZWKQMJkCX3VvK7JBrRRWIC";
+            try
+            {
+                using HttpClient http = new HttpClient();
+                using HttpRequestMessage request = new HttpRequestMessage()
+                {
+                    Method = HttpMethod.Get,
+                    RequestUri = new Uri($"https://www.google.com/recaptcha/api/siteverify?secret={key}&response={token}")
+                };
+                using HttpResponseMessage response = await http.SendAsync(request);
+                string data = await response.Content.ReadAsStringAsync();
+                dynamic obj = JsonConvert.DeserializeObject(data);
+                return obj.success;
+            }
+            catch (Exception ex) { throw; }
+        }
+
 
         private async Task<byte[]> getPasswordHash(string email, string password)
         {

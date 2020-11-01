@@ -34,8 +34,9 @@ namespace DataAccessLayer.DatabaseConnection
                 while (reader.Read())
                 {
                     user.UserID = (int)reader["UserID"];
-                    user.FirstName = reader["FirstName"] != DBNull.Value ? (string)reader["FirstName"] : null;
-                    user.LastName = reader["LastName"] != DBNull.Value ? (string)reader["LastName"] : null;
+                    user.Username = (string)reader["Username"];
+                    user.FirstName = (string)reader["FirstName"];
+                    user.LastName = (string)reader["LastName"];
                     user.DOB = reader["DOB"] != DBNull.Value ? (DateTime)reader["DOB"] : (DateTime?)null;
                     user.AccountID = (string)reader["AccountID"];
                     user.UpdateID = (int)reader["UpdateID"];
@@ -50,11 +51,12 @@ namespace DataAccessLayer.DatabaseConnection
         public async Task<bool> UpdateProfile(ProfileDTO profile)
         {
             using SqlConnection sqlcon = new SqlConnection(_connectionString);
-            string cmd = "UPDATE [User] SET FirstName = @FirstName, LastName = @LastName, DOB = @DOB, UpdateDate = GETDATE() WHERE AccountID = @AccountID";
+            string cmd = "UPDATE [User] SET Username = @Username, FirstName = @FirstName, LastName = @LastName, DOB = @DOB, UpdateDate = GETDATE() WHERE AccountID = @AccountID";
             using SqlCommand sqlcmd = new SqlCommand(cmd, sqlcon);
             try
             {
                 sqlcon.Open();
+                sqlcmd.Parameters.AddWithValue("@Username", profile.Username);
                 sqlcmd.Parameters.AddWithValue("@FirstName", profile.FirstName);
                 sqlcmd.Parameters.AddWithValue("@LastName", profile.LastName);
                 sqlcmd.Parameters.AddWithValue("@DOB", profile.DOB);
