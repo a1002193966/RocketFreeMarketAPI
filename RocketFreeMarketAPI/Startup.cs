@@ -1,4 +1,6 @@
 using System.Text;
+using BusinessLogicLayer.DataValidation;
+using BusinessLogicLayer.Infrastructure;
 using DataAccessLayer.Cryptography;
 using DataAccessLayer.DatabaseConnection;
 using DataAccessLayer.EmailSender;
@@ -51,6 +53,9 @@ namespace RocketFreeMarketAPI
             });
             services.AddOptions<SmtpPackageSerialized>();
             services.Configure<SmtpPackageSerialized>(Configuration.GetSection("SMTP"));
+
+            services.AddTransient<IAccountValidation, AccountValidation>();
+
             services.AddTransient<IAccountConnection, AccountConnection>();
             services.AddTransient<IUserConnection, UserConnection>();
             services.AddTransient<IProductPostConnection, ProductPostConnection>();

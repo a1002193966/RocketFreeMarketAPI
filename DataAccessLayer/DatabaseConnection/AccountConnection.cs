@@ -43,8 +43,6 @@ namespace DataAccessLayer.DatabaseConnection
         {
             try
             {
-                if (!await reCaptchaVerify(registerInput.ReCaptchaToken)) return EStatus.ReCaptchaFailed;
-                if (await isExist(registerInput.Email.ToUpper())) return EStatus.EmailExists;
                 Task<Secret> secret = _cryptoProcess.Encrypt_Aes(registerInput.Password);
                 using SqlConnection sqlcon = new SqlConnection(_connectionString);
                 using SqlCommand sqlcmd = new SqlCommand("SP_REGISTER", sqlcon) { CommandType = CommandType.StoredProcedure };
@@ -76,8 +74,6 @@ namespace DataAccessLayer.DatabaseConnection
         {
             try
             {
-                if (!await reCaptchaVerify(loginInput.ReCaptchaToken)) return ELoginStatus.ReCaptchaFailed;
-                if (!await isExist(loginInput.Email.ToUpper())) return ELoginStatus.IncorrectCredential;
                 byte[] passwordHash = await getPasswordHash(loginInput.Email, loginInput.Password);
                 using SqlConnection sqlcon = new SqlConnection(_connectionString);
                 using SqlCommand sqlcmd = new SqlCommand("SP_LOGIN", sqlcon) { CommandType = CommandType.StoredProcedure };
@@ -98,9 +94,7 @@ namespace DataAccessLayer.DatabaseConnection
         public async Task<EStatus> ActivateAccount(string encryptedEmail, string token)
         {
             try 
-            { 
-                bool isTokenExpired = _cryptoProcess.ValidateVerificationToken(token);
-                if (isTokenExpired) return EStatus.TokenExpired;        
+            {      
                 string decryptedEmail = _cryptoProcess.DecodeHash(encryptedEmail).ToUpper();              
                 using SqlConnection sqlcon = new SqlConnection(_connectionString);
                 using SqlCommand sqlcmd = new SqlCommand("SP_CONFIRM_EMAIL", sqlcon) { CommandType = CommandType.StoredProcedure };

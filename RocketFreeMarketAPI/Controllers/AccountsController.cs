@@ -4,6 +4,7 @@ using System.Linq;
 using System.Security.Claims;
 using System.Text.Json;
 using System.Threading.Tasks;
+using BusinessLogicLayer.Infrastructure;
 using DataAccessLayer.Infrastructure;
 using DTO;
 using Microsoft.AspNetCore.Authorization;
@@ -20,12 +21,14 @@ namespace RocketFreeMarketAPI.Controllers
     public class AccountsController : ControllerBase
     {
         private readonly IAccountConnection _conn;
+        private readonly IAccountValidation _accVal;
         private readonly IEmailSender _emailSender;
         private readonly ILoginToken _loginToken;
 
-        public AccountsController(IAccountConnection conn, IEmailSender emailSender, ILoginToken loginToken)
+        public AccountsController(IAccountValidation accVal, IAccountConnection conn, IEmailSender emailSender, ILoginToken loginToken)
         {
             _conn = conn;
+            _accVal = accVal;
             _emailSender = emailSender;
             _loginToken = loginToken;
         }
@@ -42,7 +45,7 @@ namespace RocketFreeMarketAPI.Controllers
         {
             try
             {
-                EStatus status = await _conn.Register(registerInput);
+                EStatus status = await _accVal.RegisterValidation(registerInput);
                 switch (status)
                 {
                     case EStatus.Succeeded:
@@ -96,7 +99,7 @@ namespace RocketFreeMarketAPI.Controllers
         {
             try
             {
-                ELoginStatus status = await _conn.Login(loginInput);
+                ELoginStatus status = await _accVal.LoginValidation(loginInput);
                 switch (status)
                 {
                     case ELoginStatus.LoginSucceeded:
@@ -157,14 +160,9 @@ namespace RocketFreeMarketAPI.Controllers
         [HttpGet("ConfirmEmail")]
         public async Task<IActionResult> ConfirmEmail(string e, string t)
         {
-            if (e == null || t == null)
-                return BadRequest(new {
-                    status = EStatus.InvalidLink,
-                    message = "Invalid link."
-                });
             try
             {
-                EStatus status = await _conn.ActivateAccount(e, t);
+                EStatus status = await _accVal.ActivateAccountValidation(e, t);
                 return status switch
                 {
                     EStatus.Succeeded => Ok(new
@@ -176,6 +174,11 @@ namespace RocketFreeMarketAPI.Controllers
                     {
                         status = EStatus.Failed,
                         message = "Account has already been activated or link expired."
+                    }),
+                    EStatus.InvalidLink => BadRequest(new
+                    {
+                        status = EStatus.InvalidLink,
+                        message = "Invalid link."
                     }),
                     _ => BadRequest(new
                     {
