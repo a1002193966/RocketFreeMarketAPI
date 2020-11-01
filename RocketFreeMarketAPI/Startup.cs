@@ -3,6 +3,7 @@ using DataAccessLayer.Cryptography;
 using DataAccessLayer.DatabaseConnection;
 using DataAccessLayer.EmailSender;
 using DataAccessLayer.Infrastructure;
+using DTO;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -48,6 +49,8 @@ namespace RocketFreeMarketAPI
                     IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Configuration.GetSection("JWT").GetSection("Key").Value))
                 };
             });
+            services.AddOptions<SmtpPackageSerialized>();
+            services.Configure<SmtpPackageSerialized>(Configuration.GetSection("SMTP"));
             services.AddTransient<IAccountConnection, AccountConnection>();
             services.AddTransient<IUserConnection, UserConnection>();
             services.AddTransient<IProductPostConnection, ProductPostConnection>();

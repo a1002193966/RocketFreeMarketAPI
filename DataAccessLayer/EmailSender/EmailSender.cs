@@ -3,15 +3,14 @@ using DTO;
 using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
 using System;
-using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
-using System.IO;
 using System.Net;
 using System.Net.Mail;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Options;
 
 namespace DataAccessLayer.EmailSender
 {
@@ -19,10 +18,13 @@ namespace DataAccessLayer.EmailSender
     {
         private readonly ICryptoProcess _cryptoProcess;
         private readonly IConfiguration _configuration;
-        public EmailSender(IConfiguration configuration, ICryptoProcess cryptoProcess)
+        private readonly IOptions<SmtpPackageSerialized> _smtpSerialized;
+
+        public EmailSender(IConfiguration configuration, ICryptoProcess cryptoProcess, IOptions<SmtpPackageSerialized> smtpSerialized)
         {
             _cryptoProcess = cryptoProcess;
             _configuration = configuration;
+            _smtpSerialized = smtpSerialized;
         }
 
         public async Task<bool> ExecuteSender(string email, string tokenType)
@@ -42,7 +44,10 @@ namespace DataAccessLayer.EmailSender
 
         private async Task sendEmailConfirmation(string email, string token, string tokenType)
         {
-            SmtpPackage smtpPackage = JsonConvert.DeserializeObject<SmtpPackage>(_configuration.GetSection("SMTP").Value);
+            SmtpPackageSerialized smtpSe = _smtpSerialized.Value;
+            string data = JsonConvert.SerializeObject(smtpSe);
+            SmtpPackage smtpPackage = JsonConvert.DeserializeObject<SmtpPackage>(data);
+
             using MailMessage mail = new MailMessage();
             using SmtpClient smtp = new SmtpClient();             
             mail.From = new MailAddress(await _cryptoProcess.Decrypt_Aes(smtpPackage.UsernamePackage));
