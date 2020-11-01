@@ -3,12 +3,9 @@ using DTO;
 using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel.Design;
 using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
-using System.Reflection;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace DataAccessLayer.DatabaseConnection
@@ -19,7 +16,7 @@ namespace DataAccessLayer.DatabaseConnection
         private readonly Dictionary<string, int> category = new Dictionary<string, int>()
         {
             { "Clothing", 1 }, { "Electronics & Computers", 2 }, { "Health", 3 }, { "Food", 4 }, 
-            { "Beauty", 5 }, { "At Home", 6 }, { "Rental", 7 }, { "Sports & Outdoors", 8 }
+            { "Beauty", 5 }, { "At Home", 6 }, { "Rental", 7 }, { "Sports & Outdoors", 8 }, { "Other", 9 }
         };
 
         public ProductPostConnection(IConfiguration configuration)
@@ -35,8 +32,9 @@ namespace DataAccessLayer.DatabaseConnection
                 Task<int> userId = getUserId(email);
                 MyPost post = null;
                 using SqlConnection sqlcon = new SqlConnection(_connectionString);
-                string query = "SELECT PostID, LastUpdateDate, City, State, CategoryId, Price, " +
-                    "Subject, Content, ViewCount FROM [Product_Post] WHERE UserID = @UserID AND PostID = @PostID";
+                string query = @"SELECT PostID, LastUpdateDate, City, State, 
+                                 CategoryId, Price, Subject, Content, ViewCount 
+                                 FROM [Product_Post] WHERE UserID = @UserID AND PostID = @PostID";
                 using SqlCommand sqlcmd = new SqlCommand(query, sqlcon);
                 sqlcmd.Parameters.AddWithValue("@UserID", await userId);
                 sqlcmd.Parameters.AddWithValue("@PostID", postID);
@@ -69,8 +67,10 @@ namespace DataAccessLayer.DatabaseConnection
             {
                 MyPost post = null;
                 using SqlConnection sqlcon = new SqlConnection(_connectionString);
-                string query = "SELECT PostID, LastUpdateDate, City, State, CategoryId, Price, " +
-                    "Subject, Content, Username, ViewCount FROM [Product_Post] p JOIN [User] u ON p.UserID = u.UserID WHERE PostID = @PostID";
+                string query = @"SELECT PostID, LastUpdateDate, City, State, CategoryId,
+                                 Price, Subject, Content, ViewCount, Username 
+                                 FROM [Product_Post] AS P JOIN [User] AS U 
+                                 ON P.UserID = U.UserID WHERE PostID = @PostID";
                 using SqlCommand sqlcmd = new SqlCommand(query, sqlcon);
                 sqlcmd.Parameters.AddWithValue("@PostID", postID);
                 sqlcon.Open();
@@ -104,8 +104,11 @@ namespace DataAccessLayer.DatabaseConnection
                 Task<int> userId = getUserId(email);
                 List<MyPost> myListing = new List<MyPost>();
                 using SqlConnection sqlcon = new SqlConnection(_connectionString);
-                string query = "SELECT PostID, LastUpdateDate, City, State, CategoryId, Price, "+
-                    "Subject, Content, ViewCount FROM [Product_Post] WHERE UserID = @UserID ORDER BY [PostDate] DESC";
+                string query = @"SELECT PostID, LastUpdateDate, City, 
+                                 State, CategoryId, Price, 
+                                 Subject, Content, ViewCount 
+                                 FROM [Product_Post] 
+                                 WHERE UserID = @UserID ORDER BY [PostDate] DESC";
                 using SqlCommand sqlcmd = new SqlCommand(query, sqlcon);
                 sqlcmd.Parameters.AddWithValue("@UserID", await userId);            
                 sqlcon.Open();
@@ -136,8 +139,11 @@ namespace DataAccessLayer.DatabaseConnection
         {
             List<MyPost> listing = new List<MyPost>();
             using SqlConnection sqlcon = new SqlConnection(_connectionString);
-            string query = "SELECT TOP(10) PostID, LastUpdateDate, City, State, CategoryId, Price, " +
-                "Subject, Content, Username, ViewCount FROM [Product_Post] p JOIN [User] u ON u.UserID = p.UserID  ORDER BY [PostDate] DESC";
+            string query = @"SELECT TOP(10) PostID, LastUpdateDate,
+                             City, State, CategoryId, Price,
+                             Subject, Content, ViewCount, Username 
+                             FROM [Product_Post] AS P JOIN [User] AS U 
+                             ON U.UserID = P.UserID ORDER BY [PostDate] DESC";
             using SqlCommand sqlcmd = new SqlCommand(query, sqlcon);
             try
             {
@@ -246,7 +252,8 @@ namespace DataAccessLayer.DatabaseConnection
             try
             {
                 Task<int> userId = getUserId(email);
-                string query = "INSERT INTO [Product_Comment] VALUES(@Content, GETDATE(), 0, @PostID, @UserID)";
+                string query = @"INSERT INTO [Product_Comment] 
+                                 VALUES(@Content, GETDATE(), 0, @PostID, @UserID)";
                 using SqlConnection sqlcon = new SqlConnection(_connectionString);
                 using SqlCommand sqlcmd = new SqlCommand(query, sqlcon);
                 sqlcmd.Parameters.AddWithValue("@Content", comment.Content);
@@ -263,7 +270,9 @@ namespace DataAccessLayer.DatabaseConnection
         public async Task<List<CommentDTO>> GetCommentList(int postId)
         {
             List<CommentDTO> commentList = new List<CommentDTO>();
-            string query = "SELECT A.NormalizedEmail, B.FirstName, B.LastName, C.Content, C.CommentDate FROM [Account] AS A JOIN [User] AS B ON A.AccountID = B.AccountID JOIN [Product_Comment] AS C ON B.UserID = C.UserID AND C.PostID = @PostID ORDER BY C.CommentDate ASC";
+            string query = @"SELECT Content, CommentDate, Username FROM Product_Comment AS P 
+                             JOIN [User] AS U ON P.UserID = U.UserID WHERE PostID = @PostID 
+                             ORDER BY CommentDate ASC";
             using SqlConnection sqlcon = new SqlConnection(_connectionString);
             using SqlCommand sqlcmd = new SqlCommand(query, sqlcon);
             sqlcmd.Parameters.AddWithValue("@PostID", postId);
@@ -273,13 +282,9 @@ namespace DataAccessLayer.DatabaseConnection
                 using SqlDataReader reader = await sqlcmd.ExecuteReaderAsync();
                 while (reader.Read())
                 {
-                    int indexOfAt = ((string)reader["NormalizedEmail"]).IndexOf('@');
-                    string username = ((string)reader["NormalizedEmail"]).Substring(0, indexOfAt);
                     CommentDTO comment = new CommentDTO()
                     {
-                        Username = username,
-                        FirstName = (string)reader["FirstName"],
-                        LastName = (string)reader["LastName"],
+                        Username = (string)reader["Username"],
                         Content = (string)reader["Content"],
                         CommentDate = (DateTime)reader["CommentDate"]
                     };
@@ -301,7 +306,8 @@ namespace DataAccessLayer.DatabaseConnection
             {
                 int userId = 0;
                 using SqlConnection sqlcon = new SqlConnection(_connectionString);
-                string query = "SELECT [UserID] FROM [User] AS U JOIN [Account] AS A ON A.AccountID = U.AccountID AND A.NormalizedEmail = @Email";
+                string query = @"SELECT [UserID] FROM [User] AS U JOIN [Account] AS A 
+                                 ON A.AccountID = U.AccountID AND A.NormalizedEmail = @Email";
                 using SqlCommand sqlcmd = new SqlCommand(query, sqlcon);
                 sqlcmd.Parameters.AddWithValue("@Email", email);
                 sqlcon.Open();

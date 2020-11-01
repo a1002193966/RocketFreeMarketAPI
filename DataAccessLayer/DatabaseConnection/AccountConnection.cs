@@ -6,7 +6,6 @@ using System;
 using System.Data;
 using System.Data.SqlClient;
 using System.Net.Http;
-using System.Reflection.Metadata.Ecma335;
 using System.Threading.Tasks;
 
 
@@ -174,8 +173,6 @@ namespace DataAccessLayer.DatabaseConnection
             }
             catch (Exception ex) { throw; }
         }
-
-
 
 
 

@@ -3,9 +3,7 @@ using DTO;
 using Entities;
 using Microsoft.Extensions.Configuration;
 using System;
-using System.Collections.Generic;
 using System.Data.SqlClient;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace DataAccessLayer.DatabaseConnection
@@ -24,8 +22,10 @@ namespace DataAccessLayer.DatabaseConnection
         {
             User user = new User();
             using SqlConnection sqlcon = new SqlConnection(_connectionString);
-            string cmd = "SELECT * FROM [User] WHERE AccountID = (SELECT AccountID FROM [Account] WHERE NormalizedEmail = @NormalizedEmail)";
-            using SqlCommand sqlcmd = new SqlCommand(cmd, sqlcon);
+            string query = @"SELECT * FROM [User] WHERE AccountID = 
+                             (SELECT AccountID FROM [Account] 
+                             WHERE NormalizedEmail = @NormalizedEmail)";
+            using SqlCommand sqlcmd = new SqlCommand(query, sqlcon);
             try
             {
                 sqlcon.Open();
@@ -51,8 +51,10 @@ namespace DataAccessLayer.DatabaseConnection
         public async Task<bool> UpdateProfile(ProfileDTO profile)
         {
             using SqlConnection sqlcon = new SqlConnection(_connectionString);
-            string cmd = "UPDATE [User] SET Username = @Username, FirstName = @FirstName, LastName = @LastName, DOB = @DOB, UpdateDate = GETDATE() WHERE AccountID = @AccountID";
-            using SqlCommand sqlcmd = new SqlCommand(cmd, sqlcon);
+            string query = @"UPDATE [User] SET Username = @Username, FirstName = @FirstName, 
+                             LastName = @LastName, DOB = @DOB, UpdateDate = GETDATE() 
+                             WHERE AccountID = @AccountID";
+            using SqlCommand sqlcmd = new SqlCommand(query, sqlcon);
             try
             {
                 sqlcon.Open();
