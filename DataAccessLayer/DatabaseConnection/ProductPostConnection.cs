@@ -104,25 +104,18 @@ namespace DataAccessLayer.DatabaseConnection
                 Task<int> userId = getUserId(email);
                 List<MyPost> myListing = new List<MyPost>();
                 using SqlConnection sqlcon = new SqlConnection(_connectionString);
-                string query = @"SELECT PostID, LastUpdateDate, City, 
-                                 State, CategoryId, Price, 
-                                 Subject, Content, ViewCount 
-                                 FROM [Product_Post] 
-                                 WHERE UserID = @UserID ORDER BY [PostDate] DESC";
+                string query = @"SELECT PostID, LastUpdateDate, Subject, Content, ViewCount 
+                                 FROM [Product_Post] WHERE UserID = @UserID ORDER BY [PostDate] DESC";
                 using SqlCommand sqlcmd = new SqlCommand(query, sqlcon);
                 sqlcmd.Parameters.AddWithValue("@UserID", await userId);            
                 sqlcon.Open();
-                using SqlDataReader reader = await sqlcmd.ExecuteReaderAsync();
-                while (reader.Read())
+                using SqlDataReader reader = sqlcmd.ExecuteReader();
+                while (await reader.ReadAsync())
                 {
                     MyPost post = new MyPost()
                     {
                         PostID = (int)reader["PostID"],
                         LastUpdateDate = (DateTime)reader["LastUpdateDate"],
-                        City = (string)reader["City"],
-                        State = (string)reader["State"],
-                        Category = category.FirstOrDefault(x => x.Value == (int)reader["CategoryId"]).Key,
-                        Price = (decimal)reader["Price"],
                         Subject = (string)reader["Subject"],
                         Content = (string)reader["Content"],
                         ViewCount = (int)reader["ViewCount"]

@@ -10,6 +10,7 @@ namespace DTO
         [Required]
         [StringLength(500)]
         public string Content { get; set; }
+
         [Required]
         public int PostID { get; set; }
     }
