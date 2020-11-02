@@ -19,7 +19,6 @@ namespace DTO
         [Required]
         [StringLength(50)]
         public string Category { get; set; }
-        [RegularExpression(@"^\d+\.\d{0,2}$")]
         [Range(0, 9999999999999999.99)]
         public decimal Price { get; set; }
         [Required]
