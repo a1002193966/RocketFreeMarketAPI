@@ -9,8 +9,10 @@ namespace DTO
     {
         [Required]
         public string EncryptedEmail { get; set; }
+
         [Required]
         public string Password { get; set; }
+
         [Required]
         public string Token { get; set; }
     }
