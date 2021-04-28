@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <TargetFramework>net5.0</TargetFramework>
     <UserSecretsId>7327e6cb-abc5-4ace-9081-a8c27f24aa3a</UserSecretsId>
     <OutputType>WinExe</OutputType>
     <StartupObject></StartupObject>

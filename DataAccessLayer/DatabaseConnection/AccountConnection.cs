@@ -19,19 +19,12 @@ namespace DataAccessLayer.DatabaseConnection
 
 
         // Used for testing purpose.
-        public AccountConnection(ICryptoProcess cryptoProcess, string connectionString, IEmailSender emailSender)
-        {
-            _cryptoProcess = cryptoProcess;
-            _connectionString = connectionString;
-            _emailSender = emailSender;
-        }
+        public AccountConnection(ICryptoProcess cryptoProcess, string connectionString, IEmailSender emailSender) =>
+        (_cryptoProcess, _connectionString, _emailSender) = (cryptoProcess, connectionString, emailSender);
+      
 
-        public AccountConnection(ICryptoProcess cryptoProcess, IConfiguration configuration, IEmailSender emailSender)
-        {
-            _cryptoProcess = cryptoProcess;
-            _connectionString = configuration.GetConnectionString("DefaultConnection");
-            _emailSender = emailSender;
-        }
+        public AccountConnection(ICryptoProcess cryptoProcess, IConfiguration configuration, IEmailSender emailSender) =>
+        (_cryptoProcess, _connectionString, _emailSender) = (cryptoProcess, configuration.GetConnectionString("DefaultConnection"), emailSender);
 
         
         // <summary>   
@@ -44,8 +37,8 @@ namespace DataAccessLayer.DatabaseConnection
             try
             {
                 Task<Secret> secret = _cryptoProcess.Encrypt_Aes(registerInput.Password);
-                using SqlConnection sqlcon = new SqlConnection(_connectionString);
-                using SqlCommand sqlcmd = new SqlCommand("SP_REGISTER", sqlcon) { CommandType = CommandType.StoredProcedure };
+                using SqlConnection sqlcon = new(_connectionString);
+                using SqlCommand sqlcmd = new("SP_REGISTER", sqlcon) { CommandType = CommandType.StoredProcedure };
                 sqlcmd.Parameters.AddWithValue("@Username", registerInput.Username);
                 sqlcmd.Parameters.AddWithValue("@FirstName", registerInput.FirstName);
                 sqlcmd.Parameters.AddWithValue("@LastName", registerInput.LastName);
@@ -54,7 +47,7 @@ namespace DataAccessLayer.DatabaseConnection
                 sqlcmd.Parameters.AddWithValue("@PasswordHash", (await secret).Cipher);
                 sqlcmd.Parameters.AddWithValue("@AesIV", (await secret).IV);
                 sqlcmd.Parameters.AddWithValue("@AesKey", (await secret).Key);
-                sqlcmd.Parameters.Add(new SqlParameter("@ReturnValue", SqlDbType.Int) { Direction = ParameterDirection.Output });
+                sqlcmd.Parameters.Add(new("@ReturnValue", SqlDbType.Int) { Direction = ParameterDirection.Output });
                 sqlcon.Open();
                 sqlcmd.ExecuteNonQuery();              
                 return (EStatus)sqlcmd.Parameters["@ReturnValue"].Value;
@@ -75,11 +68,11 @@ namespace DataAccessLayer.DatabaseConnection
             try
             {
                 byte[] passwordHash = await getPasswordHash(loginInput.Email, loginInput.Password);
-                using SqlConnection sqlcon = new SqlConnection(_connectionString);
-                using SqlCommand sqlcmd = new SqlCommand("SP_LOGIN", sqlcon) { CommandType = CommandType.StoredProcedure };
+                using SqlConnection sqlcon = new(_connectionString);
+                using SqlCommand sqlcmd = new("SP_LOGIN", sqlcon) { CommandType = CommandType.StoredProcedure };
                 sqlcmd.Parameters.AddWithValue("@Email", loginInput.Email.ToUpper());
                 sqlcmd.Parameters.AddWithValue("@PasswordHash", passwordHash);
-                sqlcmd.Parameters.Add(new SqlParameter("@ReturnValue", SqlDbType.Int) { Direction = ParameterDirection.Output });
+                sqlcmd.Parameters.Add(new("@ReturnValue", SqlDbType.Int) { Direction = ParameterDirection.Output });
                 sqlcon.Open();
                 await sqlcmd.ExecuteNonQueryAsync();
                 return (ELoginStatus)sqlcmd.Parameters["@ReturnValue"].Value;
@@ -96,11 +89,11 @@ namespace DataAccessLayer.DatabaseConnection
             try 
             {      
                 string decryptedEmail = _cryptoProcess.DecodeHash(encryptedEmail).ToUpper();              
-                using SqlConnection sqlcon = new SqlConnection(_connectionString);
-                using SqlCommand sqlcmd = new SqlCommand("SP_CONFIRM_EMAIL", sqlcon) { CommandType = CommandType.StoredProcedure };
+                using SqlConnection sqlcon = new(_connectionString);
+                using SqlCommand sqlcmd = new("SP_CONFIRM_EMAIL", sqlcon) { CommandType = CommandType.StoredProcedure };
                 sqlcmd.Parameters.AddWithValue("@Email", decryptedEmail);
                 sqlcmd.Parameters.AddWithValue("@Token", token);
-                sqlcmd.Parameters.Add(new SqlParameter("@ReturnValue", SqlDbType.Int) { Direction = ParameterDirection.Output });          
+                sqlcmd.Parameters.Add(new("@ReturnValue", SqlDbType.Int) { Direction = ParameterDirection.Output });          
                 sqlcon.Open();
                 await sqlcmd.ExecuteNonQueryAsync();
                 return (EStatus)sqlcmd.Parameters["@ReturnValue"].Value;                           
@@ -180,11 +173,11 @@ namespace DataAccessLayer.DatabaseConnection
             string key = "6LfYEd0ZAAAAAIzgqOZWKQMJkCX3VvK7JBrRRWIC";
             try
             {
-                using HttpClient http = new HttpClient();
-                using HttpRequestMessage request = new HttpRequestMessage()
+                using HttpClient http = new();
+                using HttpRequestMessage request = new()
                 {
                     Method = HttpMethod.Get,
-                    RequestUri = new Uri($"https://www.google.com/recaptcha/api/siteverify?secret={key}&response={token}")
+                    RequestUri = new($"https://www.google.com/recaptcha/api/siteverify?secret={key}&response={token}")
                 };
                 using HttpResponseMessage response = await http.SendAsync(request);
                 string data = await response.Content.ReadAsStringAsync();
